@@ -1,0 +1,156 @@
+
+/* =====================================
+   GLOBAL RESET
+===================================== */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* =====================================
+   LIGHT MODE VARIABLES
+===================================== */
+
+:root {
+  color-scheme: light;
+
+  --bg-primary: #f4f6f9;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #e9eef5;
+
+  --text-primary: #222222;
+  --text-secondary: #64748b;
+
+  --border-color: #e2e8f0;
+
+  --primary-color: #003d7a;
+  --primary-hover: #002b57;
+
+  --accent-color: #f0b429;
+
+  --input-bg: #ffffff;
+  --input-border: #cbd5e1;
+
+  --card-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+/* =====================================
+   DARK MODE VARIABLES
+===================================== */
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg-primary: #111827;
+  --bg-secondary: #1f2937;
+  --bg-tertiary: #374151;
+
+  --text-primary: #f9fafb;
+  --text-secondary: #cbd5e1;
+
+  --border-color: #374151;
+
+  --primary-color: #60a5fa;
+  --primary-hover: #3b82f6;
+
+  --accent-color: #fbbf24;
+
+  --input-bg: #273449;
+  --input-border: #4b5563;
+
+  --card-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* =====================================
+   BODY
+===================================== */
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  overflow-x: hidden;
+  transition:
+    background 0.3s ease,
+    color 0.3s ease;
+}
+
+/* =====================================
+   FORM ELEMENTS
+===================================== */
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+input,
+select,
+textarea {
+  color: var(--text-primary);
+  background: var(--input-bg);
+  border-color: var(--input-border);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-secondary);
+}
+
+/* =====================================
+   LINKS
+===================================== */
+
+a {
+  text-decoration: none;
+}
+
+/* =====================================
+   IMAGES
+===================================== */
+
+img {
+  max-width: 100%;
+}
+
+/* =====================================
+   COMMON THEME TRANSITIONS
+===================================== */
+
+button,
+input,
+select,
+textarea,
+.card {
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+/* =====================================
+   REDUCED MOTION
+===================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+ 

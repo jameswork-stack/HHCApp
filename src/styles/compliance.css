@@ -1,0 +1,405 @@
+
+/* =====================================
+   COMPLIANCE PAGE
+===================================== */
+
+.compliance-page {
+  color: var(--text-primary);
+}
+
+.compliance-page h1 {
+  color: var(--text-primary);
+  font-size: clamp(22px, 3vw, 28px);
+}
+
+.compliance-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  flex-wrap: wrap;
+  margin-bottom: 25px;
+}
+
+.compliance-header p {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-top: 7px;
+}
+
+/* =====================================
+   ADD LOCATION BUTTON
+===================================== */
+
+.add-location-btn,
+.save-location-btn {
+  min-height: 42px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 7px;
+  background: var(--primary-color);
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.add-location-btn:hover,
+.save-location-btn:hover {
+  background: var(--primary-hover);
+}
+
+.add-location-btn:disabled,
+.save-location-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* =====================================
+   SELECTION CARD
+===================================== */
+
+.selection-card {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  padding: 25px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: var(--card-shadow);
+}
+
+.selection-field {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 0;
+}
+
+.selection-field label {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.selection-field input,
+.selection-field select {
+  width: 100%;
+  height: 45px;
+  padding: 0 12px;
+  border: 1px solid var(--input-border);
+  border-radius: 7px;
+  background: var(--input-bg);
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+}
+
+.selection-field input:focus,
+.selection-field select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(0, 61, 122, 0.1);
+}
+
+.selection-field select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* =====================================
+   SUCCESS AND ERROR MESSAGES
+===================================== */
+
+.compliance-success,
+.compliance-error {
+  padding: 12px 15px;
+  margin-bottom: 18px;
+  border-radius: 7px;
+  font-size: 13px;
+}
+
+.compliance-success {
+  color: #15803d;
+  background: #dcfce7;
+  border: 1px solid #86efac;
+}
+
+.compliance-error {
+  color: #dc2626;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+}
+
+/* =====================================
+   LOCATION MODAL
+===================================== */
+
+.location-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.location-modal {
+  width: 100%;
+  max-width: 450px;
+  padding: 25px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.2);
+  animation: modalFadeIn 0.2s ease;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.location-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.location-modal-header h2 {
+  font-size: 20px;
+  color: var(--text-primary);
+}
+
+.location-modal-header p {
+  margin-top: 6px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.close-modal-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 23px;
+  line-height: 1;
+}
+
+.close-modal-btn:hover {
+  background: var(--border-color);
+}
+
+.location-modal form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.location-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 5px;
+}
+
+.cancel-location-btn {
+  min-height: 42px;
+  padding: 10px 18px;
+  border: 1px solid var(--border-color);
+  border-radius: 7px;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.cancel-location-btn:hover {
+  opacity: 0.8;
+}
+
+.cancel-location-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* =====================================
+   DARK MODE MESSAGES
+===================================== */
+
+[data-theme="dark"] .compliance-success {
+  color: #86efac;
+  background: #14532d;
+  border-color: #166534;
+}
+
+[data-theme="dark"] .compliance-error {
+  color: #fca5a5;
+  background: #7f1d1d;
+  border-color: #991b1b;
+}
+
+
+/* MULTIPLE DEPARTMENT INPUTS */
+
+.department-input-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.department-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.department-input-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.remove-department-btn {
+  width: 38px;
+  height: 45px;
+  flex-shrink: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 7px;
+  background: var(--bg-tertiary);
+  color: #dc2626;
+  font-size: 22px;
+}
+
+.remove-department-btn:hover {
+  background: var(--border-color);
+}
+
+.add-department-field-btn {
+  align-self: flex-start;
+  padding: 8px 0;
+  border: none;
+  background: transparent;
+  color: var(--primary-color);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.add-department-field-btn:hover {
+  text-decoration: underline;
+}
+
+.add-department-field-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+/* LOCATION DROPDOWN AND ADD BUTTON */
+
+.location-select-row {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  width: 100%;
+}
+
+.location-select-row select {
+  flex: 1;
+  min-width: 0;
+}
+
+.add-location-inline-btn {
+  flex-shrink: 0;
+  padding: 0 16px;
+  min-height: 45px;
+  border: none;
+  border-radius: 8px;
+  background: var(--primary-color);
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.add-location-inline-btn:hover {
+  opacity: 0.9;
+}
+
+.mobile-add-text {
+  display: none;
+}
+
+/* MOBILE RESPONSIVE */
+
+@media (max-width: 600px) {
+  .location-select-row {
+    gap: 7px;
+  }
+
+  .add-location-inline-btn {
+    padding: 0 12px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 380px) {
+  .desktop-add-text {
+    display: none;
+  }
+
+  .mobile-add-text {
+    display: inline;
+  }
+
+  .add-location-inline-btn {
+    padding: 0 10px;
+  }
+}
+
+
+/* =====================================
+   RESPONSIVE
+===================================== */
+
+@media (max-width: 600px) {
+  .compliance-header {
+    align-items: stretch;
+  }
+
+  .add-location-btn {
+    width: 100%;
+  }
+
+  .selection-card {
+    grid-template-columns: 1fr;
+    padding: 18px;
+    gap: 18px;
+  }
+
+  .location-modal {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 380px) {
+  .location-modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .location-modal-actions button {
+    width: 100%;
+  }
+}
