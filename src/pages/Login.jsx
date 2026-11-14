@@ -66,7 +66,7 @@ export default function Login() {
 </button>
       <form className="login-form" onSubmit={handleLogin}>
         <img src={logo} alt="logo" />
-        <p>Please login to continue.</p>
+        <p className="plogo">Please login to continue.</p>
 
         <label>Email Address</label>
         <input
