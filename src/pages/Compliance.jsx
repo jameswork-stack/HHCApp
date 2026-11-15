@@ -1,10 +1,11 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   collection,
   onSnapshot,
   addDoc,
   updateDoc,
+  deleteDoc,
   doc,
   arrayUnion,
   serverTimestamp,
@@ -25,6 +26,15 @@ export default function Compliance() {
 
   const [showRequiredPopup, setShowRequiredPopup] = useState(false);
 const [requiredMessage, setRequiredMessage] = useState("");
+
+// LOCATION DROPDOWN AND MANAGEMENT
+const [showLocationOptions, setShowLocationOptions] = useState(false);
+const [locationMenuId, setLocationMenuId] = useState(null);
+const [editingLocationId, setEditingLocationId] = useState(null);
+const [locationDeleting, setLocationDeleting] = useState(false);
+
+const longPressTimer = useRef(null);
+const longPressTriggered = useRef(false);
 
   // =====================================
 // PERSONNEL STATES
@@ -249,6 +259,191 @@ useEffect(() => {
   setSelectedPersonnel("");
   setError("");
   setSuccess("");
+};
+
+// =====================================
+// SELECT LOCATION
+// =====================================
+
+const handleSelectLocation = (locationId) => {
+  setSelectedLocationId(locationId);
+  setSelectedDepartment("");
+  setSelectedPersonnel("");
+  setShowLocationOptions(false);
+  setLocationMenuId(null);
+  setError("");
+  setSuccess("");
+};
+
+// =====================================
+// LONG PRESS HANDLING
+// =====================================
+
+const handleLocationPointerDown = (locationId) => {
+  if (userRole !== "admin") return;
+
+  longPressTriggered.current = false;
+
+  clearTimeout(longPressTimer.current);
+
+  longPressTimer.current = setTimeout(() => {
+    longPressTriggered.current = true;
+    setLocationMenuId(locationId);
+  }, 550);
+};
+
+const handleLocationPointerUp = () => {
+  clearTimeout(longPressTimer.current);
+};
+
+const handleLocationContextMenu = (e, locationId) => {
+  if (userRole !== "admin") return;
+
+  e.preventDefault();
+  setLocationMenuId(locationId);
+};
+
+// =====================================
+// OPEN EDIT LOCATION
+// =====================================
+
+const handleEditLocation = (location) => {
+  setEditingLocationId(location.id);
+  setLocationName(location.name || "");
+  setDepartmentsInput(
+    location.departments?.length
+      ? [...location.departments]
+      : [""]
+  );
+
+  setLocationMenuId(null);
+  setShowLocationOptions(false);
+  setError("");
+  setSuccess("");
+};
+
+// =====================================
+// UPDATE LOCATION
+// =====================================
+
+const handleUpdateLocation = async (e) => {
+  e.preventDefault();
+
+  if (!editingLocationId) return;
+
+  const cleanLocationName = locationName.trim();
+
+  const cleanDepartments = [
+    ...new Set(
+      departmentsInput
+        .map((department) => department.trim())
+        .filter(Boolean)
+    ),
+  ];
+
+  if (!cleanLocationName) {
+    setError("Please enter a location name.");
+    return;
+  }
+
+  if (cleanDepartments.length === 0) {
+    setError("Please add at least one department.");
+    return;
+  }
+
+  const duplicateLocation = locations.some(
+    (location) =>
+      location.id !== editingLocationId &&
+      (location.name || "").trim().toLowerCase() ===
+        cleanLocationName.toLowerCase()
+  );
+
+  if (duplicateLocation) {
+    setError("This location name already exists.");
+    return;
+  }
+
+  setSaving(true);
+  setError("");
+  setSuccess("");
+
+  try {
+    await updateDoc(doc(db, "locations", editingLocationId), {
+      name: cleanLocationName,
+      departments: cleanDepartments,
+      updatedAt: serverTimestamp(),
+    });
+
+    // Keep the selected department only if it still exists
+    if (
+      selectedLocationId === editingLocationId &&
+      !cleanDepartments.includes(selectedDepartment)
+    ) {
+      setSelectedDepartment("");
+      setSelectedPersonnel("");
+    }
+
+    setSuccess("Location and departments updated successfully.");
+
+    setEditingLocationId(null);
+    setLocationName("");
+    setDepartmentsInput([""]);
+
+  } catch (err) {
+    console.error("Error updating location:", err);
+    setError("Unable to update location. Please check your Firestore permissions.");
+  } finally {
+    setSaving(false);
+  }
+};
+
+// =====================================
+// DELETE LOCATION
+// =====================================
+
+const handleDeleteLocation = async (location) => {
+  if (userRole !== "admin") return;
+
+  const confirmed = window.confirm(
+    `Are you sure you want to remove "${location.name}" and all its departments? This action cannot be undone.`
+  );
+
+  if (!confirmed) return;
+
+  setLocationDeleting(true);
+  setError("");
+  setSuccess("");
+  setLocationMenuId(null);
+
+  try {
+    await deleteDoc(doc(db, "locations", location.id));
+
+    if (selectedLocationId === location.id) {
+      setSelectedLocationId("");
+      setSelectedDepartment("");
+      setSelectedPersonnel("");
+    }
+
+    setSuccess(`${location.name} was removed successfully.`);
+  } catch (err) {
+    console.error("Error deleting location:", err);
+    setError("Unable to remove location. Please check your Firestore permissions.");
+  } finally {
+    setLocationDeleting(false);
+  }
+};
+
+// =====================================
+// CLOSE EDIT LOCATION
+// =====================================
+
+const handleCloseEditLocation = () => {
+  if (saving) return;
+
+  setEditingLocationId(null);
+  setLocationName("");
+  setDepartmentsInput([""]);
+  setError("");
 };
 
   // =====================================
@@ -962,36 +1157,127 @@ if (showReviewScreen) {
     <p>Select the unit or area where the observation will take place.</p>
 
     <div className="location-select-row">
-      <select
-        id="location-select"
-        value={selectedLocationId}
-        onChange={handleLocationChange}
-        disabled={loading}
-      >
-        <option value="">
-          {loading ? "Loading locations..." : "Select Location"}
-        </option>
 
-        {locations.map((location) => (
-          <option key={location.id} value={location.id}>
-            {location.name}
-          </option>
-        ))}
-      </select>
+  <div className="custom-location-dropdown">
 
-      <button
-        type="button"
-        className="add-location-inline-btn"
-        onClick={() => {
-          setError("");
-          setSuccess("");
-          setShowAddForm(true);
-        }}
-      >
-        <span className="desktop-add-text">+ Add Location</span>
-        <span className="mobile-add-text">+ Add</span>
-      </button>
-    </div>
+    {/* SELECTED LOCATION */}
+    <button
+      type="button"
+      className="custom-location-trigger"
+      onClick={() => {
+        setShowLocationOptions((prev) => !prev);
+        setLocationMenuId(null);
+      }}
+      disabled={loading}
+    >
+      <span>
+        {loading
+          ? "Loading locations..."
+          : selectedLocation?.name || "Select Location"}
+      </span>
+
+      <span className={`category-arrow ${
+        showLocationOptions ? "rotated" : ""
+      }`}>
+        ▼
+      </span>
+    </button>
+
+    {/* LOCATION OPTIONS */}
+    {showLocationOptions && (
+      <div className="custom-location-options">
+
+        {locations.length === 0 ? (
+          <div className="custom-location-empty">
+            No locations available.
+          </div>
+        ) : (
+          locations.map((location) => (
+            <div
+              key={location.id}
+              className={`custom-location-option ${
+                selectedLocationId === location.id ? "selected" : ""
+              }`}
+              onPointerDown={() =>
+                handleLocationPointerDown(location.id)
+              }
+              onPointerUp={handleLocationPointerUp}
+              onPointerLeave={handleLocationPointerUp}
+              onPointerCancel={handleLocationPointerUp}
+              onContextMenu={(e) =>
+                handleLocationContextMenu(e, location.id)
+              }
+              onClick={() => {
+                if (longPressTriggered.current) {
+                  longPressTriggered.current = false;
+                  return;
+                }
+
+                handleSelectLocation(location.id);
+              }}
+            >
+
+              <span className="custom-location-name">
+                {location.name}
+              </span>
+
+              {selectedLocationId === location.id && (
+                <span className="location-selected-check">✓</span>
+              )}
+
+              {/* EDIT / REMOVE MENU */}
+              {userRole === "admin" &&
+                locationMenuId === location.id && (
+                  <div
+                    className="location-context-menu"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => handleEditLocation(location)}
+                    >
+                      <span>✎</span>
+                      Edit
+                    </button>
+
+                    <button
+                      type="button"
+                      className="location-delete-action"
+                      onClick={() => handleDeleteLocation(location)}
+                      disabled={locationDeleting}
+                    >
+                      <span>⌫</span>
+                      {locationDeleting ? "Removing..." : "Remove"}
+                    </button>
+                  </div>
+                )}
+
+            </div>
+          ))
+        )}
+
+      </div>
+    )}
+  </div>
+
+  {/* ADD LOCATION BUTTON */}
+  <button
+    type="button"
+    className="add-location-inline-btn"
+    onClick={() => {
+      setError("");
+      setSuccess("");
+      setLocationName("");
+      setDepartmentsInput([""]);
+      setShowAddForm(true);
+    }}
+  >
+    <span className="desktop-add-text">+ Add Location</span>
+    <span className="mobile-add-text">+ Add</span>
+  </button>
+
+</div>
   </div>
 
   {/* DEPARTMENT */}
@@ -1417,6 +1703,134 @@ if (showReviewScreen) {
           </div>
         </div>
       )}
+
+
+      {/* EDIT LOCATION MODAL */}
+{editingLocationId && (
+  <div
+    className="location-modal-overlay"
+    onClick={handleCloseEditLocation}
+  >
+    <div
+      className="location-modal"
+      onClick={(e) => e.stopPropagation()}
+    >
+
+      <div className="location-modal-header">
+        <div>
+          <h2>Edit Location</h2>
+          <p>
+            Update the location name and manage its departments.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          className="close-modal-btn"
+          onClick={handleCloseEditLocation}
+          disabled={saving}
+          aria-label="Close"
+        >
+          ×
+        </button>
+      </div>
+
+      <form onSubmit={handleUpdateLocation}>
+
+        {/* LOCATION NAME */}
+        <div className="selection-field">
+          <label htmlFor="edit-location-name">
+            Location Name
+          </label>
+
+          <input
+            id="edit-location-name"
+            type="text"
+            placeholder="Enter location name"
+            value={locationName}
+            onChange={(e) => setLocationName(e.target.value)}
+            required
+          />
+        </div>
+
+        {/* DEPARTMENTS */}
+        <div className="selection-field">
+
+          <label>Departments</label>
+
+          <div className="department-input-list">
+
+            {departmentsInput.map((department, index) => (
+              <div className="department-input-row" key={index}>
+
+                <input
+                  type="text"
+                  placeholder={`Department ${index + 1}`}
+                  value={department}
+                  onChange={(e) =>
+                    handleDepartmentInputChange(index, e.target.value)
+                  }
+                />
+
+                {departmentsInput.length > 1 && (
+                  <button
+                    type="button"
+                    className="remove-department-btn"
+                    onClick={() => handleRemoveDepartmentField(index)}
+                    disabled={saving}
+                  >
+                    ×
+                  </button>
+                )}
+
+              </div>
+            ))}
+
+          </div>
+
+          <button
+            type="button"
+            className="add-department-field-btn"
+            onClick={handleAddDepartmentField}
+            disabled={saving}
+          >
+            + Add Another Department
+          </button>
+
+        </div>
+
+        {error && (
+          <div className="compliance-error">
+            {error}
+          </div>
+        )}
+
+        <div className="location-modal-actions">
+
+          <button
+            type="button"
+            className="cancel-location-btn"
+            onClick={handleCloseEditLocation}
+            disabled={saving}
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            className="save-location-btn"
+            disabled={saving}
+          >
+            {saving ? "Updating..." : "Save Changes"}
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+)}
 
       
 {/* ADD PERSONNEL MODAL */}
