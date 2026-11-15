@@ -4,11 +4,13 @@ import {
   collection,
   onSnapshot,
   addDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   doc,
   arrayUnion,
   serverTimestamp,
+  Timestamp,
 } from "firebase/firestore";
 
 import { db } from "../firebase/firebase";
@@ -999,9 +1001,11 @@ setShowReviewScreen(true);
 // SUBMIT OBSERVATION TO FIRESTORE
 // =====================================
 
+
 const handleSubmitObservation = async () => {
   setSubmitting(true);
   setError("");
+  setSuccess("");
 
   try {
     const selectedPersonnelRecord = personnel.find(
@@ -1031,52 +1035,48 @@ const handleSubmitObservation = async () => {
         : [];
 
     const observationData = {
-  // Observer information
-  observerId: currentUser?.uid || "",
-  observerName,
-  observerEmail: currentUser?.email || "",
-  observerRole: userRole || "",
+      observerId: currentUser?.uid || "",
+      observerName,
+      observerEmail: currentUser?.email || "",
+      observerRole: userRole || "",
 
-  // Location information
-  locationId: selectedLocationId,
-  locationName: selectedLocation?.name || "",
-  department: selectedDepartment,
+      locationId: selectedLocationId,
+      locationName: selectedLocation?.name || "",
+      department: selectedDepartment,
 
-  // Personnel information
-  personnelId: selectedPersonnel,
-  personnelName: selectedPersonnelRecord?.name || "",
+      personnelId: selectedPersonnel,
+      personnelName: selectedPersonnelRecord?.name || "",
 
-  // Moment of Hygiene
-  moments: selectedMomentDetails,
+      moments: selectedMomentDetails,
 
-  // Compliance determination
-  complianceDetermination,
+      complianceDetermination,
 
-  complianceDescription:
-    complianceDetermination === "Complied"
-      ? "Hand hygiene was performed using alcohol-based hand rub or soap and water."
-      : "",
+      complianceDescription:
+        complianceDetermination === "Complied"
+          ? "Hand hygiene was performed using alcohol-based hand rub or soap and water."
+          : "",
 
-  // Missed reasons
-  missedReasons: selectedMissedReasons,
+      missedReasons: selectedMissedReasons,
 
-  otherMissedReason:
-    complianceDetermination === "Missed" &&
-    missedReasons.includes("Other")
-      ? otherMissedReason.trim()
-      : "",
+      otherMissedReason:
+        complianceDetermination === "Missed" &&
+        missedReasons.includes("Other")
+          ? otherMissedReason.trim()
+          : "",
 
-  createdAt: serverTimestamp(),
-};
+      // Local timestamp is immediately available offline
+      createdAt: Timestamp.now(),
+    };
 
-    await addDoc(
-      collection(db, "complianceObservations"),
-      observationData
+    // Generate a unique Firestore document ID immediately
+    const observationRef = doc(
+      collection(db, "complianceObservations")
     );
 
-    
+    // Queue the write in Firestore's persistent local cache
+    const savePromise = setDoc(observationRef, observationData);
 
-    // Reset observation form after successful saving
+    // Reset the form immediately instead of waiting for the server
     setSelectedLocationId("");
     setSelectedDepartment("");
     setSelectedPersonnel("");
@@ -1088,16 +1088,32 @@ const handleSubmitObservation = async () => {
 
     setExpandedMissedCategories([]);
     setShowMomentOptions(false);
-
     setShowReviewScreen(false);
 
-    setSuccess("Compliance observation submitted successfully!");
+    setSuccess(
+      navigator.onLine
+        ? "Observation saved locally. Synchronizing with Firebase..."
+        : "Observation saved on this device. It will synchronize when internet returns."
+    );
+
+    // This promise resolves after Firestore receives server confirmation.
+    // It can remain pending while the device is offline.
+    savePromise
+      .then(() => {
+        setSuccess("Compliance observation synchronized successfully!");
+      })
+      .catch((err) => {
+        console.error("Error synchronizing observation:", err);
+        setError(
+          "The observation could not be synchronized. Please check your account permissions and connection."
+        );
+      });
 
   } catch (err) {
-    console.error("Error submitting observation:", err);
+    console.error("Error saving observation:", err);
 
     setError(
-      "Unable to submit observation. Please check your Firestore permissions and try again."
+      "Unable to save the observation. Please try again."
     );
   } finally {
     setSubmitting(false);

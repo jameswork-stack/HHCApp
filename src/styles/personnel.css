@@ -636,3 +636,36 @@
     font-size: 20px;
   }
 }
+
+/* OFFLINE CACHE NOTICE */
+.personnel-offline-notice {
+  padding: 12px 15px;
+  margin-bottom: 15px;
+  border: 1px solid #e6c66b;
+  border-radius: 8px;
+  background: #fff8df;
+  color: #795b0b;
+  font-size: 13px;
+}
+
+/* PENDING SYNC LABEL */
+.record-sync-pending {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  margin-top: 6px;
+  padding: 4px 8px;
+  border-radius: 20px;
+  background: #fff4d6;
+  color: #936500;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.sync-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #d99a00;
+}

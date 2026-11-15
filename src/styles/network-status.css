@@ -1,0 +1,29 @@
+
+.network-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  padding: 7px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.network-online {
+  color: #167343;
+  background: #e5f7ed;
+}
+
+.network-offline {
+  color: #b42318;
+  background: #fdebea;
+}
+
+.network-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}

@@ -10,6 +10,7 @@ import { db } from "../firebase/firebase";
 import "../styles/personnel.css";
 
 export default function PersonnelDataRecord() {
+  const [isFromCache, setIsFromCache] = useState(false);
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -20,41 +21,51 @@ export default function PersonnelDataRecord() {
   // =====================================
   // LOAD COMPLIANCE SUBMISSIONS
   // =====================================
-  useEffect(() => {
-    const unsubscribe = onSnapshot(
-      collection(db, "complianceObservations"),
-      (snapshot) => {
-        const submissions = snapshot.docs.map((item) => ({
-          id: item.id,
-          ...item.data(),
-        }));
+  
+useEffect(() => {
+  const unsubscribe = onSnapshot(
+    collection(db, "complianceObservations"),
+    { includeMetadataChanges: true },
+    (snapshot) => {
+      const submissions = snapshot.docs.map((item) => ({
+        id: item.id,
+        ...item.data(),
 
-        // Latest submissions first
-        submissions.sort((a, b) => {
-          const dateA = a.createdAt?.toDate
-            ? a.createdAt.toDate().getTime()
-            : 0;
+        // Local synchronization status
+        hasPendingWrites: item.metadata.hasPendingWrites,
+      }));
 
-          const dateB = b.createdAt?.toDate
-            ? b.createdAt.toDate().getTime()
-            : 0;
+      submissions.sort((a, b) => {
+        const dateA = a.createdAt?.toDate
+          ? a.createdAt.toDate().getTime()
+          : 0;
 
-          return dateB - dateA;
-        });
+        const dateB = b.createdAt?.toDate
+          ? b.createdAt.toDate().getTime()
+          : 0;
 
-        setRecords(submissions);
-        setLoading(false);
-        setError("");
-      },
-      (err) => {
-        console.error("Error loading compliance records:", err);
-        setError("Unable to load personnel records. Please check your Firestore permissions.");
-        setLoading(false);
-      }
-    );
+        return dateB - dateA;
+      });
 
-    return () => unsubscribe();
-  }, []);
+      setRecords(submissions);
+      setIsFromCache(snapshot.metadata.fromCache);
+      setLoading(false);
+      setError("");
+    },
+    (err) => {
+      console.error("Error loading compliance records:", err);
+
+      setError(
+        "Unable to load personnel records. Please check your permissions."
+      );
+
+      setLoading(false);
+    }
+  );
+
+  return () => unsubscribe();
+}, []);
+
 
   // =====================================
   // FORMAT DATE
@@ -204,6 +215,12 @@ export default function PersonnelDataRecord() {
         </div>
       )}
 
+      {isFromCache && (
+  <div className="personnel-offline-notice">
+    Showing locally cached records. Some information may not be up to date.
+  </div>
+)}
+
       {/* RECORD LIST */}
       <div className="personnel-table-container">
         {loading ? (
@@ -236,8 +253,15 @@ export default function PersonnelDataRecord() {
   }
 >
   <td data-label="Submission Date" className="submission-date-cell">
-    <strong>{formatDate(record.createdAt)}</strong>
-  </td>
+  <strong>{formatDate(record.createdAt)}</strong>
+
+  {record.hasPendingWrites && (
+    <span className="record-sync-pending">
+      <span className="sync-dot"></span>
+      Waiting to sync
+    </span>
+  )}
+</td>
 
   <td data-label="Submission ID" className="personnel-id">
     {record.id}

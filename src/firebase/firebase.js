@@ -1,7 +1,11 @@
 
 import { initializeApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import {
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+} from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -12,13 +16,22 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-const app = getApps().find((item) => item.name === "[DEFAULT]")
-  || initializeApp(firebaseConfig);
+// DEFAULT FIREBASE APP
+const app =
+  getApps().find((item) => item.name === "[DEFAULT]") ||
+  initializeApp(firebaseConfig);
 
+// FIREBASE AUTH
 export const auth = getAuth(app);
-export const db = getFirestore(app);
 
-// Separate Firebase app for creating accounts
+// FIRESTORE WITH OFFLINE PERSISTENCE
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager(),
+  }),
+});
+
+// SEPARATE FIREBASE APP FOR CREATING ACCOUNTS
 const userCreationApp =
   getApps().find((item) => item.name === "userCreationApp") ||
   initializeApp(firebaseConfig, "userCreationApp");

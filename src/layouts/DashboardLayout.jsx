@@ -7,6 +7,7 @@ import { useAuth } from "../context/AuthContext";
 import "../styles/layout.css";
 import { useTheme } from "../context/ThemeContext";
 import logo from "../assets/images/logo.png";
+import NetworkStatus from "../Components/NetworkStatus";
 
 export default function DashboardLayout() {
   const { currentUser, userRole } = useAuth();
@@ -77,6 +78,8 @@ export default function DashboardLayout() {
         id="app-sidebar"
         className={`sidebar ${menuOpen ? "sidebar-open" : ""}`}
       >
+
+        <NetworkStatus />
         <div className="sidebar-header">
           <img src={logo} alt="logo" />
           <p className="plogo">Management Portal</p>
