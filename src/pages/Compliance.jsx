@@ -12,6 +12,7 @@ import {
 
 import { db } from "../firebase/firebase";
 import "../styles/compliance.css";
+import { useAuth } from "../context/AuthContext";
 
 export default function Compliance() {
   const [locations, setLocations] = useState([]);
@@ -150,6 +151,15 @@ const missedReasonCategories = [
     reasons: ["Other"],
   },
 ];
+
+const { currentUser, userRole } = useAuth();
+
+const observerName =
+  currentUser?.name ||
+  currentUser?.displayName ||
+  currentUser?.fullName ||
+  currentUser?.email ||
+  "Unknown User";
 
   // =====================================
   // LOAD LOCATIONS FROM FIRESTORE
@@ -635,8 +645,34 @@ const handleSubmitObservation = async () => {
         : [];
 
     const observationData = {
-      locationId: selectedLocationId,
-      locationName: selectedLocation?.name || "",
+  observerId: currentUser?.uid || "",
+  observerName: observerName,
+  observerEmail: currentUser?.email || "",
+  observerRole: userRole || "",
+
+  locationId: selectedLocationId,
+  locationName: selectedLocation?.name || "",
+  department: selectedDepartment,
+  personnelId: selectedPersonnel,
+  personnelName: selectedPersonnelRecord?.name || "",
+
+  // Keep your other existing fields below 
+
+  // =====================================
+  // OBSERVER ACCOUNT INFORMATION
+  // =====================================
+
+  observerId: currentUser?.uid || "",
+  observerName: observerName,
+  observerEmail: currentUser?.email || "",
+  observerRole: userRole || "",
+
+  // =====================================
+  // LOCATION INFORMATION
+  // =====================================
+
+  locationId: selectedLocationId,
+  locationName: selectedLocation?.name || "",
 
       department: selectedDepartment,
 
@@ -667,6 +703,8 @@ const handleSubmitObservation = async () => {
       collection(db, "complianceObservations"),
       observationData
     );
+
+    
 
     // Reset observation form after successful saving
     setSelectedLocationId("");
@@ -755,6 +793,7 @@ if (showReviewScreen) {
         </div>
       )}
 
+
       <div className="review-observation-card">
 
         {/* LOCATION INFORMATION */}
@@ -763,6 +802,12 @@ if (showReviewScreen) {
           <h3>Observation Information</h3>
 
           <div className="review-information-grid">
+
+            {/* OBSERVER */}
+  <div className="review-information-item">
+    <span>Observer Name</span>
+    <strong>{observerName}</strong>
+  </div>
 
             <div className="review-information-item">
               <span>Location</span>
