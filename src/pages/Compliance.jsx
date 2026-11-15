@@ -32,6 +32,14 @@ const [showLocationOptions, setShowLocationOptions] = useState(false);
 const [locationMenuId, setLocationMenuId] = useState(null);
 const [editingLocationId, setEditingLocationId] = useState(null);
 const [locationDeleting, setLocationDeleting] = useState(false);
+const [showDepartmentOptions, setShowDepartmentOptions] = useState(false);
+const [showPersonnelOptions, setShowPersonnelOptions] = useState(false);
+const [departmentMenuId, setDepartmentMenuId] = useState(null);
+const [personnelMenuId, setPersonnelMenuId] = useState(null);
+const [editingSelection, setEditingSelection] = useState(null);
+const [selectionEditName, setSelectionEditName] = useState("");
+const [selectionSaving, setSelectionSaving] = useState(false);
+const [selectionDeleting, setSelectionDeleting] = useState(false);
 
 const longPressTimer = useRef(null);
 const longPressTriggered = useRef(false);
@@ -74,10 +82,8 @@ const [locationMenuPosition, setLocationMenuPosition] = useState({
   left: 0,
 });
 
-const openLocationMenu = (e, locationId) => {
-  const option = e.currentTarget;
-
-  const rect = option.getBoundingClientRect();
+const getContextMenuPosition = (element) => {
+  const rect = element.getBoundingClientRect();
 
   const menuWidth = 155;
   const menuHeight = 100;
@@ -97,7 +103,11 @@ const openLocationMenu = (e, locationId) => {
     Math.min(top, window.innerHeight - menuHeight - padding)
   );
 
-  setLocationMenuPosition({ top, left });
+  return { top, left };
+};
+
+const openLocationMenu = (e, locationId) => {
+  setLocationMenuPosition(getContextMenuPosition(e.currentTarget));
   setLocationMenuId(locationId);
 };
 
@@ -302,7 +312,11 @@ const handleSelectLocation = (locationId) => {
   setSelectedDepartment("");
   setSelectedPersonnel("");
   setShowLocationOptions(false);
+  setShowDepartmentOptions(false);
+  setShowPersonnelOptions(false);
   setLocationMenuId(null);
+  setDepartmentMenuId(null);
+  setPersonnelMenuId(null);
   setError("");
   setSuccess("");
 };
@@ -317,10 +331,12 @@ const handleLocationPointerDown = (e, locationId) => {
   longPressTriggered.current = false;
 
   clearTimeout(longPressTimer.current);
+  const position = getContextMenuPosition(e.currentTarget);
 
   longPressTimer.current = setTimeout(() => {
     longPressTriggered.current = true;
-    openLocationMenu(e, locationId);
+    setLocationMenuPosition(position);
+    setLocationMenuId(locationId);
   }, 550);
 };
 
@@ -333,6 +349,179 @@ const handleLocationContextMenu = (e, locationId) => {
 
   e.preventDefault();
   openLocationMenu(e, locationId);
+};
+
+const handleSelectionPointerDown = (e, setMenuId, itemId) => {
+  if (userRole !== "admin") return;
+
+  longPressTriggered.current = false;
+  clearTimeout(longPressTimer.current);
+  const position = getContextMenuPosition(e.currentTarget);
+
+  longPressTimer.current = setTimeout(() => {
+    longPressTriggered.current = true;
+    setLocationMenuPosition(position);
+    setMenuId(itemId);
+  }, 550);
+};
+
+const handleSelectionContextMenu = (e, setMenuId, itemId) => {
+  if (userRole !== "admin") return;
+
+  e.preventDefault();
+  setLocationMenuPosition(getContextMenuPosition(e.currentTarget));
+  setMenuId(itemId);
+};
+
+const handleEditSelection = (type, item, itemIndex) => {
+  setEditingSelection(
+    type === "department"
+      ? {
+          type,
+          locationId: selectedLocationId,
+          departmentIndex: itemIndex,
+          originalName: item,
+        }
+      : { type, id: item.id, originalName: item.name || "" }
+  );
+  setSelectionEditName(type === "department" ? item : item.name || "");
+  setLocationMenuId(null);
+  setDepartmentMenuId(null);
+  setPersonnelMenuId(null);
+  setShowLocationOptions(false);
+  setShowDepartmentOptions(false);
+  setShowPersonnelOptions(false);
+  setError("");
+  setSuccess("");
+};
+
+const handleSaveSelectionEdit = async (e) => {
+  e.preventDefault();
+  if (!editingSelection) return;
+
+  const cleanName = selectionEditName.trim();
+  if (!cleanName) {
+    setError(`Please enter a ${editingSelection.type} name.`);
+    return;
+  }
+
+  if (editingSelection.type === "department") {
+    const duplicateDepartment = departments.some(
+      (department, index) =>
+        index !== editingSelection.departmentIndex &&
+        department.trim().toLowerCase() === cleanName.toLowerCase()
+    );
+    if (duplicateDepartment) {
+      setError("This department already exists in this location.");
+      return;
+    }
+  } else {
+    const duplicatePersonnel = personnel.some(
+      (person) =>
+        person.id !== editingSelection.id &&
+        (person.name || "").trim().toLowerCase() === cleanName.toLowerCase()
+    );
+    if (duplicatePersonnel) {
+      setError("This personnel name already exists.");
+      return;
+    }
+  }
+
+  setSelectionSaving(true);
+  setError("");
+  setSuccess("");
+
+  try {
+    if (editingSelection.type === "department") {
+      const updatedDepartments = [...departments];
+      updatedDepartments[editingSelection.departmentIndex] = cleanName;
+      await updateDoc(doc(db, "locations", editingSelection.locationId), {
+        departments: updatedDepartments,
+        updatedAt: serverTimestamp(),
+      });
+
+      if (selectedDepartment === editingSelection.originalName) {
+        setSelectedDepartment(cleanName);
+      }
+      setSuccess("Department updated successfully.");
+    } else {
+      await updateDoc(doc(db, "personnel", editingSelection.id), {
+        name: cleanName,
+        updatedAt: serverTimestamp(),
+      });
+      setSuccess("Personnel updated successfully.");
+    }
+
+    setEditingSelection(null);
+    setSelectionEditName("");
+  } catch (err) {
+    console.error(`Error updating ${editingSelection.type}:`, err);
+    setError(`Unable to update ${editingSelection.type}. Please check your Firestore permissions.`);
+  } finally {
+    setSelectionSaving(false);
+  }
+};
+
+const handleRemoveDepartment = async (department, index) => {
+  if (userRole !== "admin") return;
+  const confirmed = window.confirm(
+    `Are you sure you want to remove "${department}" from this location?`
+  );
+  if (!confirmed) return;
+
+  setSelectionDeleting(true);
+  setDepartmentMenuId(null);
+  setError("");
+  setSuccess("");
+  try {
+    const updatedDepartments = departments.filter((_, departmentIndex) => departmentIndex !== index);
+    await updateDoc(doc(db, "locations", selectedLocationId), {
+      departments: updatedDepartments,
+      updatedAt: serverTimestamp(),
+    });
+    if (selectedDepartment === department) {
+      setSelectedDepartment("");
+      setSelectedPersonnel("");
+    }
+    setSuccess(`${department} was removed successfully.`);
+  } catch (err) {
+    console.error("Error removing department:", err);
+    setError("Unable to remove department. Please check your Firestore permissions.");
+  } finally {
+    setSelectionDeleting(false);
+  }
+};
+
+const handleRemovePersonnel = async (person) => {
+  if (userRole !== "admin") return;
+  const confirmed = window.confirm(
+    `Are you sure you want to remove "${person.name}" from the personnel list?`
+  );
+  if (!confirmed) return;
+
+  setSelectionDeleting(true);
+  setPersonnelMenuId(null);
+  setError("");
+  setSuccess("");
+  try {
+    await deleteDoc(doc(db, "personnel", person.id));
+    if (selectedPersonnel === person.id) {
+      setSelectedPersonnel("");
+    }
+    setSuccess(`${person.name} was removed successfully.`);
+  } catch (err) {
+    console.error("Error removing personnel:", err);
+    setError("Unable to remove personnel. Please check your Firestore permissions.");
+  } finally {
+    setSelectionDeleting(false);
+  }
+};
+
+const handleCloseSelectionEdit = () => {
+  if (selectionSaving) return;
+  setEditingSelection(null);
+  setSelectionEditName("");
+  setError("");
 };
 
 // =====================================
@@ -1173,8 +1362,7 @@ if (showReviewScreen) {
     <p>Select the unit or area where the observation will take place.</p>
 
     <div className="location-select-row">
-
-  <div className="custom-location-dropdown">
+    <div className="custom-location-dropdown">
 
     {/* SELECTED LOCATION */}
     <button
@@ -1183,6 +1371,10 @@ if (showReviewScreen) {
       onClick={() => {
         setShowLocationOptions((prev) => !prev);
         setLocationMenuId(null);
+        setShowDepartmentOptions(false);
+        setShowPersonnelOptions(false);
+        setDepartmentMenuId(null);
+        setPersonnelMenuId(null);
       }}
       disabled={loading}
     >
@@ -1214,8 +1406,8 @@ if (showReviewScreen) {
           className={`custom-location-option ${
             selectedLocationId === location.id ? "selected" : ""
           }`}
-          onPointerDown={() =>
-            handleLocationPointerDown(location.id)
+          onPointerDown={(e) =>
+            handleLocationPointerDown(e, location.id)
           }
           onPointerUp={handleLocationPointerUp}
           onPointerLeave={handleLocationPointerUp}
@@ -1304,27 +1496,97 @@ if (showReviewScreen) {
     </label>
     <p>Select the department from selected location.</p>
 
-    <select
-      id="department-select"
-      value={selectedDepartment}
-      onChange={(e) => {
-  setSelectedDepartment(e.target.value);
-  setSelectedPersonnel("");
-}}
-      disabled={!selectedLocationId || departments.length === 0}
-    >
-      <option value="">
-        {!selectedLocationId
-          ? "Select a location first"
-          : "Select Department"}
-      </option>
+    <div className="location-select-row">
+      <div className="custom-location-dropdown">
+      <button
+        id="department-select"
+        type="button"
+        className="custom-location-trigger"
+        onClick={() => {
+          setShowDepartmentOptions((prev) => !prev);
+          setShowLocationOptions(false);
+          setShowPersonnelOptions(false);
+          setLocationMenuId(null);
+          setPersonnelMenuId(null);
+        }}
+        disabled={!selectedLocationId || departments.length === 0}
+      >
+        <span>
+          {!selectedLocationId
+            ? "Select a location first"
+            : selectedDepartment || "Select Department"}
+        </span>
+        <span className={`category-arrow ${showDepartmentOptions ? "rotated" : ""}`}>
+          ▼
+        </span>
+      </button>
 
-      {departments.map((department, index) => (
-        <option key={`${department}-${index}`} value={department}>
-          {department}
-        </option>
-      ))}
-    </select>
+      {showDepartmentOptions && (
+        <div className="custom-location-options">
+          {departments.map((department, index) => (
+            <div
+              key={`${department}-${index}`}
+              className={`custom-location-option ${
+                selectedDepartment === department ? "selected" : ""
+              }`}
+              onPointerDown={(e) =>
+                handleSelectionPointerDown(e, setDepartmentMenuId, index)
+              }
+              onPointerUp={handleLocationPointerUp}
+              onPointerLeave={handleLocationPointerUp}
+              onPointerCancel={handleLocationPointerUp}
+              onContextMenu={(e) =>
+                handleSelectionContextMenu(e, setDepartmentMenuId, index)
+              }
+              onClick={() => {
+                if (longPressTriggered.current) {
+                  longPressTriggered.current = false;
+                  return;
+                }
+                setSelectedDepartment(department);
+                setSelectedPersonnel("");
+                setShowDepartmentOptions(false);
+                setDepartmentMenuId(null);
+              }}
+            >
+              <span className="custom-location-name">{department}</span>
+              {selectedDepartment === department && (
+                <span className="location-selected-check">✓</span>
+              )}
+              {userRole === "admin" && departmentMenuId === index && (
+                <div
+                  className="location-context-menu"
+                  style={{
+                    top: `${locationMenuPosition.top}px`,
+                    left: `${locationMenuPosition.left}px`,
+                  }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    type="button"
+                    onClick={() => handleEditSelection("department", department, index)}
+                  >
+                    <span>✎</span>
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    className="location-delete-action"
+                    onClick={() => handleRemoveDepartment(department, index)}
+                    disabled={selectionDeleting}
+                  >
+                    <span>⌫</span>
+                    {selectionDeleting ? "Removing..." : "Remove"}
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      </div>
+    </div>
   </div>
 
   {/* PERSONNEL OBSERVED */}
@@ -1335,28 +1597,103 @@ if (showReviewScreen) {
   <p>Select the healthcare worker being observed</p>
 
   <div className="location-select-row">
-    <select
-      id="personnel-select"
-      value={selectedPersonnel}
-      onChange={(e) => setSelectedPersonnel(e.target.value)}
-      disabled={!selectedLocationId || !selectedDepartment}
-    >
-      <option value="">
-        {!selectedLocationId
-          ? "Select a location first"
-          : !selectedDepartment
-          ? "Select a department first"
-          : filteredPersonnel.length === 0
-          ? "No personnel available"
-          : "Select Personnel"}
-      </option>
+    <div className="custom-location-dropdown">
+      <button
+        id="personnel-select"
+        type="button"
+        className="custom-location-trigger"
+        onClick={() => {
+          setShowPersonnelOptions((prev) => !prev);
+          setShowLocationOptions(false);
+          setShowDepartmentOptions(false);
+          setLocationMenuId(null);
+          setDepartmentMenuId(null);
+        }}
+        disabled={!selectedLocationId || !selectedDepartment}
+      >
+        <span>
+          {!selectedLocationId
+            ? "Select a location first"
+            : !selectedDepartment
+            ? "Select a department first"
+            : filteredPersonnel.length === 0
+            ? "No personnel available"
+            : personnel.find((person) => person.id === selectedPersonnel)?.name ||
+              "Select Personnel"}
+        </span>
+        <span className={`category-arrow ${showPersonnelOptions ? "rotated" : ""}`}>
+          ▼
+        </span>
+      </button>
 
-      {filteredPersonnel.map((person) => (
-        <option key={person.id} value={person.id}>
-          {person.name}
-        </option>
-      ))}
-    </select>
+      {showPersonnelOptions && (
+        <div className="custom-location-options">
+          {filteredPersonnel.length === 0 ? (
+            <div className="custom-location-empty">No personnel available.</div>
+          ) : (
+            filteredPersonnel.map((person) => (
+              <div
+                key={person.id}
+                className={`custom-location-option ${
+                  selectedPersonnel === person.id ? "selected" : ""
+                }`}
+                onPointerDown={(e) =>
+                  handleSelectionPointerDown(e, setPersonnelMenuId, person.id)
+                }
+                onPointerUp={handleLocationPointerUp}
+                onPointerLeave={handleLocationPointerUp}
+                onPointerCancel={handleLocationPointerUp}
+                onContextMenu={(e) =>
+                  handleSelectionContextMenu(e, setPersonnelMenuId, person.id)
+                }
+                onClick={() => {
+                  if (longPressTriggered.current) {
+                    longPressTriggered.current = false;
+                    return;
+                  }
+                  setSelectedPersonnel(person.id);
+                  setShowPersonnelOptions(false);
+                  setPersonnelMenuId(null);
+                }}
+              >
+                <span className="custom-location-name">{person.name}</span>
+                {selectedPersonnel === person.id && (
+                  <span className="location-selected-check">✓</span>
+                )}
+                {userRole === "admin" && personnelMenuId === person.id && (
+                  <div
+                    className="location-context-menu"
+                    style={{
+                      top: `${locationMenuPosition.top}px`,
+                      left: `${locationMenuPosition.left}px`,
+                    }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => handleEditSelection("personnel", person)}
+                    >
+                      <span>✎</span>
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="location-delete-action"
+                      onClick={() => handleRemovePersonnel(person)}
+                      disabled={selectionDeleting}
+                    >
+                      <span>⌫</span>
+                      {selectionDeleting ? "Removing..." : "Remove"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
 
     <button
       type="button"
@@ -1845,6 +2182,72 @@ if (showReviewScreen) {
 
       </form>
 
+    </div>
+  </div>
+)}
+
+{/* EDIT DEPARTMENT OR PERSONNEL MODAL */}
+{editingSelection && (
+  <div
+    className="location-modal-overlay"
+    onClick={handleCloseSelectionEdit}
+  >
+    <div
+      className="location-modal"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="location-modal-header">
+        <div>
+          <h2>
+            Edit {editingSelection.type === "department" ? "Department" : "Personnel"}
+          </h2>
+          <p>Update the name only.</p>
+        </div>
+        <button
+          type="button"
+          className="close-modal-btn"
+          onClick={handleCloseSelectionEdit}
+          disabled={selectionSaving}
+          aria-label="Close"
+        >
+          ×
+        </button>
+      </div>
+
+      <form onSubmit={handleSaveSelectionEdit}>
+        <div className="selection-field">
+          <label htmlFor="edit-selection-name">
+            {editingSelection.type === "department" ? "Department Name" : "Personnel Name"}
+          </label>
+          <input
+            id="edit-selection-name"
+            type="text"
+            value={selectionEditName}
+            onChange={(e) => setSelectionEditName(e.target.value)}
+            required
+          />
+        </div>
+
+        {error && <div className="compliance-error">{error}</div>}
+
+        <div className="location-modal-actions">
+          <button
+            type="button"
+            className="cancel-location-btn"
+            onClick={handleCloseSelectionEdit}
+            disabled={selectionSaving}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="save-location-btn"
+            disabled={selectionSaving}
+          >
+            {selectionSaving ? "Saving..." : "Save Changes"}
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 )}
