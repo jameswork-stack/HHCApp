@@ -1,5 +1,5 @@
 
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
@@ -12,7 +12,15 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-const app = initializeApp(firebaseConfig);
+const app = getApps().find((item) => item.name === "[DEFAULT]")
+  || initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+// Separate Firebase app for creating accounts
+const userCreationApp =
+  getApps().find((item) => item.name === "userCreationApp") ||
+  initializeApp(firebaseConfig, "userCreationApp");
+
+export const userCreationAuth = getAuth(userCreationApp);
