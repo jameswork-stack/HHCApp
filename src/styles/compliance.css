@@ -62,6 +62,7 @@
 .selection-card {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
   gap: 20px;
   padding: 25px;
   background: var(--bg-secondary);
@@ -342,6 +343,729 @@
   display: none;
 }
 
+
+/* =====================================
+   MOMENT OF HYGIENE
+===================================== */
+
+.moment-selection-field {
+  width: 100%;
+}
+
+.moment-checkbox-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.moment-checkbox-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+  background: var(--card-bg);
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.moment-checkbox-item:hover {
+  border-color: var(--primary-color);
+}
+
+.moment-checkbox-item.selected {
+  border-color: var(--primary-color);
+  background: var(--bg-secondary);
+}
+
+.moment-checkbox-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  accent-color: var(--primary-color);
+  cursor: pointer;
+}
+
+.moment-checkbox-content {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.moment-checkbox-content strong {
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.moment-checkbox-content span {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.moment-selection-count {
+  margin-top: 10px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+/* =====================================
+   COMPLIANCE DETERMINATION
+===================================== */
+
+.determination-field {
+  width: 100%;
+}
+
+.determination-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.determination-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 48px;
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.determination-btn span {
+  font-size: 17px;
+}
+
+.complied-btn.active {
+  background: #e7f7ed;
+  border-color: #219653;
+  color: #16733b;
+}
+
+.missed-btn.active {
+  background: #fdecec;
+  border-color: #dc3545;
+  color: #c82333;
+}
+
+.determination-btn:hover {
+  opacity: 0.85;
+}
+
+/* =====================================
+   COMPLIED DESCRIPTION
+===================================== */
+
+.determination-description {
+  margin-top: 14px;
+  padding: 16px;
+  border-radius: 9px;
+  line-height: 1.6;
+}
+
+.complied-description {
+  background: #e7f7ed;
+  border: 1px solid #b7e4c7;
+  color: #16733b;
+}
+
+.determination-description strong {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 14px;
+}
+
+.determination-description p {
+  font-size: 13px;
+}
+
+/* =====================================
+   MISSED REASONS
+===================================== */
+
+.missed-reasons-container {
+  margin-top: 16px;
+}
+
+.missed-reasons-instruction {
+  margin-bottom: 16px;
+  padding: 13px 15px;
+  border-left: 4px solid var(--primary-color);
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.missed-reasons-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.missed-reason-group {
+  padding: 15px;
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+  background: var(--card-bg);
+}
+
+.missed-reason-group h4 {
+  margin-bottom: 12px;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.missed-reason-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.missed-reason-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 7px;
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 1.5;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.missed-reason-option:hover {
+  border-color: var(--primary-color);
+}
+
+.missed-reason-option.selected {
+  border-color: var(--primary-color);
+  background: var(--bg-secondary);
+}
+
+.missed-reason-option input {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  accent-color: var(--primary-color);
+  cursor: pointer;
+}
+
+/* =====================================
+   OTHER REASON
+===================================== */
+
+.other-reason-field {
+  margin-top: 16px;
+}
+
+.other-reason-field label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.other-reason-field textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  outline: none;
+  resize: vertical;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.other-reason-field textarea:focus {
+  border-color: var(--primary-color);
+}
+
+.missed-reason-count {
+  margin-top: 12px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+/* =====================================
+   COLLAPSIBLE MISSED CATEGORIES
+===================================== */
+
+.missed-reason-group {
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+  background: var(--card-bg);
+}
+
+.missed-category-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 50px;
+  padding: 12px 15px;
+  border: none;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.missed-category-toggle:hover,
+.missed-category-toggle.expanded {
+  background: var(--bg-secondary);
+}
+
+.missed-category-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.category-selected-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 21px;
+  height: 21px;
+  padding: 0 6px;
+  border-radius: 20px;
+  background: var(--primary-color);
+  color: white;
+  font-size: 11px;
+}
+
+.category-arrow {
+  color: var(--text-secondary);
+  font-size: 11px;
+  transition: transform 0.2s ease;
+}
+
+.category-arrow.rotated {
+  transform: rotate(180deg);
+}
+
+/* OPTIONS INSIDE EXPANDED CATEGORY */
+
+.missed-reason-group .missed-reason-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  padding: 12px;
+  border-top: 1px solid var(--border-color);
+}
+/* =====================================
+   MOMENT OF HYGIENE DROPDOWN
+===================================== */
+
+.moment-dropdown-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 48px;
+  margin-top: 10px;
+  padding: 12px 15px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.moment-dropdown-toggle:hover,
+.moment-dropdown-toggle.expanded {
+  border-color: var(--primary-color);
+  background: var(--bg-secondary);
+}
+
+.moment-dropdown-toggle .category-arrow {
+  flex-shrink: 0;
+}
+
+.moment-checkbox-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.moment-selection-count {
+  margin-top: 10px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+/* =====================================
+   REVIEW & SUBMIT BUTTON
+===================================== */
+
+.compliance-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  margin-top: 20px;
+}
+
+.review-observation-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 46px;
+  padding: 0 22px;
+  border: none;
+  border-radius: 8px;
+  background: var(--primary-color);
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.review-observation-btn:hover {
+  opacity: 0.9;
+}
+
+/* =====================================
+   REVIEW SCREEN
+===================================== */
+
+.review-observation-card {
+  width: 100%;
+  padding: 24px;
+  margin-top: 20px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--card-bg);
+}
+
+.review-section {
+  width: 100%;
+}
+
+.review-section h3 {
+  margin-bottom: 18px;
+  color: var(--text-primary);
+  font-size: 17px;
+}
+
+.review-information-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 15px;
+}
+
+.review-information-item {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 13px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+}
+
+.review-information-item span {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.review-information-item strong {
+  color: var(--text-primary);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.review-divider {
+  width: 100%;
+  height: 1px;
+  margin: 23px 0;
+  background: var(--border-color);
+}
+
+/* MOMENTS */
+
+.review-selected-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.review-selected-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 13px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.review-check-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 23px;
+  height: 23px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--primary-color);
+  color: white;
+  font-size: 12px;
+}
+
+.review-selected-item strong {
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.review-selected-item p {
+  margin-top: 5px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* DETERMINATION */
+
+.review-determination {
+  display: inline-flex;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.review-complied {
+  background: #e7f7ed;
+  color: #16733b;
+}
+
+.review-missed {
+  background: #fdecec;
+  color: #c82333;
+}
+
+.review-description {
+  margin-top: 15px;
+  padding: 15px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+}
+
+.review-description strong {
+  font-size: 14px;
+}
+
+.review-description p {
+  margin-top: 6px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* MISSED REASONS */
+
+.review-missed-list {
+  margin-top: 18px;
+}
+
+.review-missed-list h4 {
+  margin-bottom: 15px;
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.review-reason-category {
+  margin-bottom: 13px;
+  padding: 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.review-reason-category strong,
+.review-other-reason strong {
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.review-reason-category ul {
+  margin: 10px 0 0 20px;
+  color: var(--text-secondary);
+}
+
+.review-reason-category li {
+  margin-bottom: 7px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.review-other-reason {
+  padding: 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.review-other-reason p {
+  margin-top: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+/* REVIEW ACTIONS */
+
+.review-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.back-to-edit-btn,
+.submit-observation-btn {
+  min-height: 46px;
+  padding: 0 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.back-to-edit-btn {
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-primary);
+}
+
+.submit-observation-btn {
+  background: var(--primary-color);
+  color: white;
+}
+
+.back-to-edit-btn:disabled,
+.submit-observation-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* MOBILE */
+
+@media (max-width: 600px) {
+  .review-observation-card {
+    padding: 15px;
+  }
+
+  .review-information-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .review-actions {
+    flex-direction: column-reverse;
+  }
+
+  .back-to-edit-btn,
+  .submit-observation-btn {
+    width: 100%;
+  }
+
+  .compliance-form-actions {
+    justify-content: stretch;
+  }
+
+  .review-observation-btn {
+    width: 100%;
+  }
+}
+
+
+@media (max-width: 600px) {
+  .moment-checkbox-list {
+    grid-template-columns: 1fr;
+  }
+
+  .moment-dropdown-toggle {
+    min-height: 45px;
+  }
+}
+
+/* MOBILE */
+
+@media (max-width: 600px) {
+  .missed-reason-group .missed-reason-options {
+    grid-template-columns: 1fr;
+  }
+
+  .missed-category-toggle {
+    min-height: 46px;
+    padding: 11px 12px;
+  }
+}
+
+/* =====================================
+   MOBILE RESPONSIVENESS
+===================================== */
+
+@media (max-width: 600px) {
+  .missed-reason-options {
+    grid-template-columns: 1fr;
+  }
+
+  .determination-buttons {
+    gap: 8px;
+  }
+
+  .determination-btn {
+    min-height: 45px;
+    font-size: 13px;
+  }
+
+  .missed-reason-group {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 600px) {
+  .moment-checkbox-list {
+    grid-template-columns: 1fr;
+  }
+
+  .moment-checkbox-item {
+    padding: 12px;
+  }
+}
+
+
 /* MOBILE RESPONSIVE */
 
 @media (max-width: 600px) {
@@ -401,5 +1125,67 @@
 
   .location-modal-actions button {
     width: 100%;
+  }
+}
+
+/* =====================================
+   FIX COMPLIANCE BUTTON STRETCHING
+===================================== */
+
+/* Keep all selection fields aligned to the top */
+.selection-card > .selection-field {
+  align-self: start;
+  min-width: 0;
+}
+
+/* Make determination buttons maintain fixed height */
+.determination-buttons {
+  align-items: start;
+}
+
+.determination-btn {
+  height: 48px;
+  min-height: 48px;
+  max-height: 48px;
+  align-self: start;
+}
+
+/* Keep Review & Submit button from stretching */
+.compliance-form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+  align-self: start;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+}
+
+.review-observation-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: auto;
+  height: 46px;
+  min-height: 46px;
+  max-height: 46px;
+  align-self: flex-start;
+  white-space: nowrap;
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .compliance-form-actions {
+    grid-column: 1;
+    justify-content: stretch;
+  }
+
+  .review-observation-btn {
+    width: 100%;
+    height: 46px;
+    min-height: 46px;
+    max-height: 46px;
   }
 }
