@@ -69,6 +69,38 @@ const [otherMissedReason, setOtherMissedReason] = useState("");
 
 const [selectedMoments, setSelectedMoments] = useState([]);
 
+const [locationMenuPosition, setLocationMenuPosition] = useState({
+  top: 0,
+  left: 0,
+});
+
+const openLocationMenu = (e, locationId) => {
+  const option = e.currentTarget;
+
+  const rect = option.getBoundingClientRect();
+
+  const menuWidth = 155;
+  const menuHeight = 100;
+  const padding = 8;
+
+  let left = rect.right - menuWidth;
+  let top = rect.top;
+
+  // Prevent menu from going outside the screen
+  left = Math.max(
+    padding,
+    Math.min(left, window.innerWidth - menuWidth - padding)
+  );
+
+  top = Math.max(
+    padding,
+    Math.min(top, window.innerHeight - menuHeight - padding)
+  );
+
+  setLocationMenuPosition({ top, left });
+  setLocationMenuId(locationId);
+};
+
 const hygieneMoments = [
   {
     id: "moment1",
@@ -279,7 +311,7 @@ const handleSelectLocation = (locationId) => {
 // LONG PRESS HANDLING
 // =====================================
 
-const handleLocationPointerDown = (locationId) => {
+const handleLocationPointerDown = (e, locationId) => {
   if (userRole !== "admin") return;
 
   longPressTriggered.current = false;
@@ -288,7 +320,7 @@ const handleLocationPointerDown = (locationId) => {
 
   longPressTimer.current = setTimeout(() => {
     longPressTriggered.current = true;
-    setLocationMenuId(locationId);
+    openLocationMenu(e, locationId);
   }, 550);
 };
 
@@ -300,7 +332,7 @@ const handleLocationContextMenu = (e, locationId) => {
   if (userRole !== "admin") return;
 
   e.preventDefault();
-  setLocationMenuId(locationId);
+  openLocationMenu(e, locationId);
 };
 
 // =====================================
@@ -804,59 +836,43 @@ const handleSubmitObservation = async () => {
         : [];
 
     const observationData = {
+  // Observer information
   observerId: currentUser?.uid || "",
-  observerName: observerName,
+  observerName,
   observerEmail: currentUser?.email || "",
   observerRole: userRole || "",
 
+  // Location information
   locationId: selectedLocationId,
   locationName: selectedLocation?.name || "",
   department: selectedDepartment,
+
+  // Personnel information
   personnelId: selectedPersonnel,
   personnelName: selectedPersonnelRecord?.name || "",
 
-  // Keep your other existing fields below 
+  // Moment of Hygiene
+  moments: selectedMomentDetails,
 
-  // =====================================
-  // OBSERVER ACCOUNT INFORMATION
-  // =====================================
+  // Compliance determination
+  complianceDetermination,
 
-  observerId: currentUser?.uid || "",
-  observerName: observerName,
-  observerEmail: currentUser?.email || "",
-  observerRole: userRole || "",
+  complianceDescription:
+    complianceDetermination === "Complied"
+      ? "Hand hygiene was performed using alcohol-based hand rub or soap and water."
+      : "",
 
-  // =====================================
-  // LOCATION INFORMATION
-  // =====================================
+  // Missed reasons
+  missedReasons: selectedMissedReasons,
 
-  locationId: selectedLocationId,
-  locationName: selectedLocation?.name || "",
+  otherMissedReason:
+    complianceDetermination === "Missed" &&
+    missedReasons.includes("Other")
+      ? otherMissedReason.trim()
+      : "",
 
-      department: selectedDepartment,
-
-      personnelId: selectedPersonnel,
-      personnelName: selectedPersonnelRecord?.name || "",
-
-      moments: selectedMomentDetails,
-
-      complianceDetermination,
-
-      complianceDescription:
-        complianceDetermination === "Complied"
-          ? "Hand hygiene was performed using alcohol-based hand rub or soap and water."
-          : "",
-
-      missedReasons: selectedMissedReasons,
-
-      otherMissedReason:
-        complianceDetermination === "Missed" &&
-        missedReasons.includes("Other")
-          ? otherMissedReason.trim()
-          : "",
-
-      createdAt: serverTimestamp(),
-    };
+  createdAt: serverTimestamp(),
+};
 
     await addDoc(
       collection(db, "complianceObservations"),
@@ -1184,81 +1200,82 @@ if (showReviewScreen) {
     </button>
 
     {/* LOCATION OPTIONS */}
-    {showLocationOptions && (
-      <div className="custom-location-options">
-
-        {locations.length === 0 ? (
-          <div className="custom-location-empty">
-            No locations available.
-          </div>
-        ) : (
-          locations.map((location) => (
-            <div
-              key={location.id}
-              className={`custom-location-option ${
-                selectedLocationId === location.id ? "selected" : ""
-              }`}
-              onPointerDown={() =>
-                handleLocationPointerDown(location.id)
-              }
-              onPointerUp={handleLocationPointerUp}
-              onPointerLeave={handleLocationPointerUp}
-              onPointerCancel={handleLocationPointerUp}
-              onContextMenu={(e) =>
-                handleLocationContextMenu(e, location.id)
-              }
-              onClick={() => {
-                if (longPressTriggered.current) {
-                  longPressTriggered.current = false;
-                  return;
-                }
-
-                handleSelectLocation(location.id);
-              }}
-            >
-
-              <span className="custom-location-name">
-                {location.name}
-              </span>
-
-              {selectedLocationId === location.id && (
-                <span className="location-selected-check">✓</span>
-              )}
-
-              {/* EDIT / REMOVE MENU */}
-              {userRole === "admin" &&
-                locationMenuId === location.id && (
-                  <div
-                    className="location-context-menu"
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => handleEditLocation(location)}
-                    >
-                      <span>✎</span>
-                      Edit
-                    </button>
-
-                    <button
-                      type="button"
-                      className="location-delete-action"
-                      onClick={() => handleDeleteLocation(location)}
-                      disabled={locationDeleting}
-                    >
-                      <span>⌫</span>
-                      {locationDeleting ? "Removing..." : "Remove"}
-                    </button>
-                  </div>
-                )}
-
-            </div>
-          ))
-        )}
-
+{showLocationOptions && (
+  <div className="custom-location-options">
+    {locations.length === 0 ? (
+      <div className="custom-location-empty">
+        No locations available.
       </div>
+    ) : (
+      locations.map((location) => (
+        <div
+          key={location.id}
+          data-location-id={location.id}
+          className={`custom-location-option ${
+            selectedLocationId === location.id ? "selected" : ""
+          }`}
+          onPointerDown={() =>
+            handleLocationPointerDown(location.id)
+          }
+          onPointerUp={handleLocationPointerUp}
+          onPointerLeave={handleLocationPointerUp}
+          onPointerCancel={handleLocationPointerUp}
+          onContextMenu={(e) =>
+            handleLocationContextMenu(e, location.id)
+          }
+          onClick={() => {
+            if (longPressTriggered.current) {
+              longPressTriggered.current = false;
+              return;
+            }
+
+            handleSelectLocation(location.id);
+          }}
+        >
+          <span className="custom-location-name">
+            {location.name}
+          </span>
+
+          {selectedLocationId === location.id && (
+            <span className="location-selected-check">✓</span>
+          )}
+
+          {/* EDIT / REMOVE MENU */}
+          {userRole === "admin" &&
+            locationMenuId === location.id && (
+              <div
+                className="location-context-menu"
+                style={{
+                  top: `${locationMenuPosition.top}px`,
+                  left: `${Math.max(5, locationMenuPosition.left)}px`,
+                }}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  onClick={() => handleEditLocation(location)}
+                >
+                  <span>✎</span>
+                  Edit
+                </button>
+
+                <button
+                  type="button"
+                  className="location-delete-action"
+                  onClick={() => handleDeleteLocation(location)}
+                  disabled={locationDeleting}
+                >
+                  <span>⌫</span>
+                  {locationDeleting ? "Removing..." : "Remove"}
+                </button>
+              </div>
+            )}
+        </div>
+      ))
     )}
+  </div>
+)}
   </div>
 
   {/* ADD LOCATION BUTTON */}
