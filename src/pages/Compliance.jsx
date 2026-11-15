@@ -71,6 +71,12 @@ const [missedReasons, setMissedReasons] = useState([]);
 
 const [otherMissedReason, setOtherMissedReason] = useState("");
 
+  useEffect(() => {
+    if (showReviewScreen) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [showReviewScreen]);
+
   // =====================================
 // MOMENT OF HYGIENE
 // =====================================
