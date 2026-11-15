@@ -108,6 +108,8 @@ const missedPercentage =
     : "0.0";
 
     // Get the most common missed reasons per department
+
+// Get the most common missed reasons per department
 const departmentHindrances = useMemo(() => {
   const departmentCounts = {};
 
@@ -116,7 +118,8 @@ const departmentHindrances = useMemo(() => {
       (record) => record.complianceDetermination === "Missed"
     )
     .forEach((record) => {
-      const department = record.department || "Unspecified Department";
+      const department =
+        record.department || "Unspecified Department";
 
       if (!departmentCounts[department]) {
         departmentCounts[department] = {};
@@ -127,7 +130,10 @@ const departmentHindrances = useMemo(() => {
         ? record.missedReasons
         : []
       ).forEach((item) => {
-        const reason = item.reason || item.category;
+        const reason =
+          typeof item === "string"
+            ? item
+            : item.reason || item.category;
 
         if (reason && String(reason).trim()) {
           const label = String(reason).trim();
@@ -137,7 +143,7 @@ const departmentHindrances = useMemo(() => {
         }
       });
 
-      // Count the additional Other reason, if provided
+      // Count additional Other reason
       if (
         record.otherMissedReason &&
         String(record.otherMissedReason).trim()
@@ -152,18 +158,34 @@ const departmentHindrances = useMemo(() => {
     });
 
   return Object.entries(departmentCounts)
-    .map(([department, reasons]) => ({
-      department,
-      reasons: Object.entries(reasons)
-        .map(([reason, count]) => ({ reason, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 3),
-    }))
+    .map(([department, reasons]) => {
+      const sortedReasons = Object.entries(reasons)
+        .map(([reason, count]) => ({
+          reason,
+          count,
+        }))
+        // Highest reason count first
+        .sort((a, b) => b.count - a.count);
+
+      const totalHindrances = sortedReasons.reduce(
+        (total, item) => total + item.count,
+        0
+      );
+
+      return {
+        department,
+        reasons: sortedReasons.slice(0, 3),
+        totalHindrances,
+      };
+    })
     .filter((item) => item.reasons.length > 0)
-    .sort((a, b) =>
-      a.department.localeCompare(b.department)
+    // Department with most hindrances first
+    .sort(
+      (a, b) =>
+        b.totalHindrances - a.totalHindrances
     );
 }, [filteredRecords]);
+
 
   // Reset department if it is not available in the selected unit
   useEffect(() => {
