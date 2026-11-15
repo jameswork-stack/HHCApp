@@ -1001,7 +1001,6 @@ setShowReviewScreen(true);
 // SUBMIT OBSERVATION TO FIRESTORE
 // =====================================
 
-
 const handleSubmitObservation = async () => {
   setSubmitting(true);
   setError("");

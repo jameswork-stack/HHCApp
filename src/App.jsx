@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
 
 import ProtectedRoute from "./Components/ProtectedRoute";
+import PwaInstallPrompt from "./Components/PwaInstallPrompt";
 import DashboardLayout from "./layouts/DashboardLayout";
 
 import Login from "./pages/Login";
@@ -102,6 +103,7 @@ function AppRoutes() {
 export default function App() {
   return (
     <ThemeProvider>
+      <PwaInstallPrompt />
       <BrowserRouter>
         <AuthProvider>
           <AppRoutes />
