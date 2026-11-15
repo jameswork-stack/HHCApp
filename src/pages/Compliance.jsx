@@ -23,6 +23,9 @@ export default function Compliance() {
   const [locationName, setLocationName] = useState("");
   const [departmentsInput, setDepartmentsInput] = useState([""]);
 
+  const [showRequiredPopup, setShowRequiredPopup] = useState(false);
+const [requiredMessage, setRequiredMessage] = useState("");
+
   // =====================================
 // PERSONNEL STATES
 // =====================================
@@ -31,8 +34,6 @@ const [personnel, setPersonnel] = useState([]);
 const [selectedPersonnel, setSelectedPersonnel] = useState("");
 
 const [showPersonnelForm, setShowPersonnelForm] = useState(false);
-const [personnelLocationId, setPersonnelLocationId] = useState("");
-const [personnelDepartment, setPersonnelDepartment] = useState("");
 const [staffNamesInput, setStaffNamesInput] = useState([""]);
 const [showMomentOptions, setShowMomentOptions] = useState(false);
 const [showReviewScreen, setShowReviewScreen] = useState(false);
@@ -151,6 +152,11 @@ const missedReasonCategories = [
     reasons: ["Other"],
   },
 ];
+
+const showRequiredMessage = (message) => {
+  setRequiredMessage(message);
+  setShowRequiredPopup(true);
+};
 
 const { currentUser, userRole } = useAuth();
 
@@ -374,25 +380,10 @@ const handleRemoveDepartmentField = (index) => {
 };
 
 // =====================================
-// FILTER PERSONNEL BY LOCATION + DEPARTMENT
+// ALL PERSONNEL
 // =====================================
 
-const filteredPersonnel = personnel.filter(
-  (person) =>
-    person.locationId === selectedLocationId &&
-    person.department === selectedDepartment
-);
-
-// =====================================
-// PERSONNEL FORM DEPARTMENTS
-// =====================================
-
-const personnelFormLocation = locations.find(
-  (location) => location.id === personnelLocationId
-);
-
-const personnelFormDepartments =
-  personnelFormLocation?.departments || [];
+const filteredPersonnel = personnel;
 
 // =====================================
 // ADD / REMOVE STAFF INPUT FIELDS
@@ -426,50 +417,26 @@ const handleSavePersonnel = async (e) => {
       staffNamesInput
         .map((name) => name.trim())
         .filter((name) => name !== "")
-        .map((name) => name)
     ),
   ];
-
-  if (!personnelLocationId) {
-    setError("Please select a location.");
-    return;
-  }
-
-  if (!personnelDepartment) {
-    setError("Please select a department.");
-    return;
-  }
 
   if (cleanStaffNames.length === 0) {
     setError("Please enter at least one staff name.");
     return;
   }
 
-  const selectedFormLocation = locations.find(
-    (location) => location.id === personnelLocationId
-  );
-
-  if (
-    !selectedFormLocation?.departments?.includes(personnelDepartment)
-  ) {
-    setError("Please select a valid department.");
-    return;
-  }
-
-  // Prevent duplicate names within the same location and department.
+  // Prevent duplicate personnel names
   const duplicateNames = cleanStaffNames.filter((name) =>
     personnel.some(
       (person) =>
-        person.locationId === personnelLocationId &&
-        person.department === personnelDepartment &&
         (person.name || "").trim().toLowerCase() ===
-          name.toLowerCase()
+        name.toLowerCase()
     )
   );
 
   if (duplicateNames.length > 0) {
     setError(
-      `These staff names already exist: ${duplicateNames.join(", ")}`
+      `These personnel already exist: ${duplicateNames.join(", ")}`
     );
     return;
   }
@@ -485,9 +452,6 @@ const handleSavePersonnel = async (e) => {
       cleanStaffNames.map((name) =>
         addDoc(personnelCollection, {
           name,
-          locationId: personnelLocationId,
-          locationName: selectedFormLocation.name,
-          department: personnelDepartment,
           createdAt: serverTimestamp(),
         })
       )
@@ -497,33 +461,21 @@ const handleSavePersonnel = async (e) => {
       `${cleanStaffNames.length} personnel added successfully.`
     );
 
-    // If the saved personnel belong to the currently selected
-    // location and department, they will appear automatically.
-    if (
-      personnelLocationId === selectedLocationId &&
-      personnelDepartment === selectedDepartment
-    ) {
-      setSelectedPersonnel("");
-    }
+    setSelectedPersonnel("");
 
     setShowPersonnelForm(false);
-    setPersonnelLocationId("");
-    setPersonnelDepartment("");
     setStaffNamesInput([""]);
+
   } catch (err) {
     console.error("Error saving personnel:", err);
-    setError("Unable to save personnel. Please check Firestore permissions.");
+
+    setError(
+      "Unable to save personnel. Please check your Firestore permissions."
+    );
+
   } finally {
     setPersonnelSaving(false);
   }
-};
-
-const handleMissedCategoryToggle = (category) => {
-  setExpandedMissedCategories((prev) =>
-    prev.includes(category)
-      ? prev.filter((item) => item !== category)
-      : [...prev, category]
-  );
 };
 
 // =====================================
@@ -558,6 +510,18 @@ const handleDeterminationChange = (value) => {
 };
 
 // =====================================
+// HANDLE MISSED CATEGORY DROPDOWN
+// =====================================
+
+const handleMissedCategoryToggle = (category) => {
+  setExpandedMissedCategories((prev) =>
+    prev.includes(category)
+      ? prev.filter((item) => item !== category)
+      : [...prev, category]
+  );
+};
+
+// =====================================
 // REVIEW OBSERVATION
 // =====================================
 
@@ -565,48 +529,48 @@ const handleOpenReview = () => {
   setError("");
 
   if (!selectedLocationId) {
-    setError("Please select a location.");
-    return;
-  }
+  showRequiredMessage("Please select a location.");
+  return;
+}
 
-  if (!selectedDepartment) {
-    setError("Please select a department.");
-    return;
-  }
+if (!selectedDepartment) {
+  showRequiredMessage("Please select a department.");
+  return;
+}
 
-  if (!selectedPersonnel) {
-    setError("Please select personnel observed.");
-    return;
-  }
+if (!selectedPersonnel) {
+  showRequiredMessage("Please select personnel observed.");
+  return;
+}
 
-  if (selectedMoments.length === 0) {
-    setError("Please select at least one Moment of Hygiene.");
-    return;
-  }
+if (selectedMoments.length === 0) {
+  showRequiredMessage("Please select at least one Moment of Hygiene.");
+  return;
+}
 
-  if (!complianceDetermination) {
-    setError("Please select Complied or Missed.");
-    return;
-  }
+if (!complianceDetermination) {
+  showRequiredMessage("Please select a compliance determination.");
+  return;
+}
 
-  if (
-    complianceDetermination === "Missed" &&
-    missedReasons.length === 0
-  ) {
-    setError("Please select at least one reason for missed hand hygiene.");
-    return;
-  }
+if (
+  complianceDetermination === "Missed" &&
+  missedReasons.length === 0
+) {
+  showRequiredMessage("Please select at least one reason for missed hand hygiene.");
+  return;
+}
 
-  if (
-    complianceDetermination === "Missed" &&
-    missedReasons.includes("Other") &&
-    !otherMissedReason.trim()
-  ) {
-    setError("Please specify the Other reason.");
-    return;
-  }
+if (
+  complianceDetermination === "Missed" &&
+  missedReasons.includes("Other") &&
+  !otherMissedReason.trim()
+) {
+  showRequiredMessage("Please specify the other reason.");
+  return;
+}
 
-  setShowReviewScreen(true);
+setShowReviewScreen(true);
 };
 
 // =====================================
@@ -742,8 +706,6 @@ const handleClosePersonnelForm = () => {
   if (personnelSaving) return;
 
   setShowPersonnelForm(false);
-  setPersonnelLocationId("");
-  setPersonnelDepartment("");
   setStaffNamesInput([""]);
   setError("");
 };
@@ -1113,6 +1075,8 @@ if (showReviewScreen) {
 
   <label>4. Moment of Hygiene</label>
 
+  <p>Which moment applies to this observation?</p>
+
   <button
     type="button"
     className={`moment-dropdown-toggle ${
@@ -1454,7 +1418,8 @@ if (showReviewScreen) {
         </div>
       )}
 
-      {/* ADD PERSONNEL MODAL */}
+      
+{/* ADD PERSONNEL MODAL */}
 {showPersonnelForm && (
   <div
     className="location-modal-overlay"
@@ -1467,7 +1432,10 @@ if (showReviewScreen) {
       <div className="location-modal-header">
         <div>
           <h2>Add Personnel</h2>
-          <p>Select a location and department, then add staff names.</p>
+          <p>
+            Register healthcare personnel. You can select
+            them for any location and department later.
+          </p>
         </div>
 
         <button
@@ -1482,76 +1450,22 @@ if (showReviewScreen) {
       </div>
 
       <form onSubmit={handleSavePersonnel}>
-        {/* LOCATION */}
-        <div className="selection-field">
-          <label htmlFor="personnel-location">
-            Location
-          </label>
-
-          <select
-            id="personnel-location"
-            value={personnelLocationId}
-            onChange={(e) => {
-              setPersonnelLocationId(e.target.value);
-              setPersonnelDepartment("");
-              setError("");
-            }}
-            required
-          >
-            <option value="">Select Location</option>
-
-            {locations.map((location) => (
-              <option key={location.id} value={location.id}>
-                {location.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* DEPARTMENT */}
-        <div className="selection-field">
-          <label htmlFor="personnel-department">
-            Department
-          </label>
-
-          <select
-            id="personnel-department"
-            value={personnelDepartment}
-            onChange={(e) => {
-              setPersonnelDepartment(e.target.value);
-              setError("");
-            }}
-            disabled={!personnelLocationId}
-            required
-          >
-            <option value="">
-              {personnelLocationId
-                ? "Select Department"
-                : "Select a location first"}
-            </option>
-
-            {personnelFormDepartments.map((department, index) => (
-              <option key={`${department}-${index}`} value={department}>
-                {department}
-              </option>
-            ))}
-          </select>
-        </div>
 
         {/* STAFF NAMES */}
         <div className="selection-field">
-          <label>Staff Names</label>
+          <label>Personnel Names</label>
 
           <div className="department-input-list">
             {staffNamesInput.map((name, index) => (
               <div className="department-input-row" key={index}>
                 <input
                   type="text"
-                  placeholder={`Staff Name ${index + 1}`}
+                  placeholder={`Personnel Name ${index + 1}`}
                   value={name}
                   onChange={(e) =>
                     handleStaffNameChange(index, e.target.value)
                   }
+                  required
                 />
 
                 {staffNamesInput.length > 1 && (
@@ -1574,7 +1488,7 @@ if (showReviewScreen) {
             onClick={handleAddStaffField}
             disabled={personnelSaving}
           >
-            + Add Another Staff
+            + Add Another Personnel
           </button>
         </div>
 
@@ -1599,10 +1513,33 @@ if (showReviewScreen) {
             className="save-location-btn"
             disabled={personnelSaving}
           >
-            {personnelSaving ? "Saving..." : "Save Personnel"}
+            {personnelSaving
+              ? "Saving..."
+              : "Save Personnel"}
           </button>
         </div>
+
       </form>
+    </div>
+  </div>
+)}
+
+{/* REQUIRED FIELD POPUP */}
+{showRequiredPopup && (
+  <div className="required-popup-overlay">
+    <div className="required-popup">
+      <div className="required-popup-icon">!</div>
+
+      <h3>Required Field</h3>
+
+      <p>{requiredMessage}</p>
+
+      <button
+        type="button"
+        onClick={() => setShowRequiredPopup(false)}
+      >
+        OK
+      </button>
     </div>
   </div>
 )}
