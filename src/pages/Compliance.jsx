@@ -306,7 +306,6 @@ useEffect(() => {
   const handleLocationChange = (e) => {
   setSelectedLocationId(e.target.value);
   setSelectedDepartment("");
-  setSelectedPersonnel("");
   setError("");
   setSuccess("");
 };
@@ -318,7 +317,6 @@ useEffect(() => {
 const handleSelectLocation = (locationId) => {
   setSelectedLocationId(locationId);
   setSelectedDepartment("");
-  setSelectedPersonnel("");
   setShowLocationOptions(false);
   setShowDepartmentOptions(false);
   setShowPersonnelOptions(false);
@@ -489,7 +487,6 @@ const handleRemoveDepartment = async (department, index) => {
     });
     if (selectedDepartment === department) {
       setSelectedDepartment("");
-      setSelectedPersonnel("");
     }
     setSuccess(`${department} was removed successfully.`);
   } catch (err) {
@@ -609,7 +606,6 @@ const handleUpdateLocation = async (e) => {
       !cleanDepartments.includes(selectedDepartment)
     ) {
       setSelectedDepartment("");
-      setSelectedPersonnel("");
     }
 
     setSuccess("Location and departments updated successfully.");
@@ -650,7 +646,6 @@ const handleDeleteLocation = async (location) => {
     if (selectedLocationId === location.id) {
       setSelectedLocationId("");
       setSelectedDepartment("");
-      setSelectedPersonnel("");
     }
 
     setSuccess(`${location.name} was removed successfully.`);
@@ -1569,7 +1564,6 @@ if (showReviewScreen) {
                   return;
                 }
                 setSelectedDepartment(department);
-                setSelectedPersonnel("");
                 setShowDepartmentOptions(false);
                 setDepartmentMenuId(null);
               }}
@@ -1619,7 +1613,7 @@ if (showReviewScreen) {
   <label htmlFor="personnel-select">
     3. Personnel Observed
   </label>
-  <p>Select the healthcare worker being observed</p>
+  <p>You can select personnel before choosing a location or department.</p>
 
   <div className="location-select-row">
     <div className="custom-location-dropdown">
@@ -1634,14 +1628,9 @@ if (showReviewScreen) {
           setLocationMenuId(null);
           setDepartmentMenuId(null);
         }}
-        disabled={!selectedLocationId || !selectedDepartment}
       >
         <span>
-          {!selectedLocationId
-            ? "Select a location first"
-            : !selectedDepartment
-            ? "Select a department first"
-            : filteredPersonnel.length === 0
+          {filteredPersonnel.length === 0
             ? "No personnel available"
             : personnel.find((person) => person.id === selectedPersonnel)?.name ||
               "Select Personnel"}
