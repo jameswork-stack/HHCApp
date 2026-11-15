@@ -10,6 +10,15 @@ import "../styles/dashboard.css";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
+const getTodayLocalDate = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+};
+
 export default function Dashboard() {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,8 +28,8 @@ export default function Dashboard() {
   const [selectedDepartment, setSelectedDepartment] = useState("All");
 
   // Date filters
-  const [dateFilterType, setDateFilterType] = useState("");
-const [selectedDate, setSelectedDate] = useState("");
+  const [dateFilterType, setDateFilterType] = useState("date");
+const [selectedDate, setSelectedDate] = useState(getTodayLocalDate);
 const [selectedMonth, setSelectedMonth] = useState("");
 const [showMobileFilters, setShowMobileFilters] = useState(false);
 
