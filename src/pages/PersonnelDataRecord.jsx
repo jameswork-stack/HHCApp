@@ -288,7 +288,7 @@ export default function PersonnelDataRecord() {
                               setActiveMenu(null);
                             }}
                           >
-                            <span>👁</span> View
+                             View
                           </button>
 
                           <button
@@ -296,7 +296,7 @@ export default function PersonnelDataRecord() {
                             className="personnel-remove-option"
                             onClick={() => handleRemove(record)}
                           >
-                            <span>🗑</span> Remove
+                             Remove
                           </button>
                         </div>
                       )}
