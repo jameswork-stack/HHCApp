@@ -1570,6 +1570,11 @@
   z-index: 600;
 }
 
+.department-selection-field.dropdown-open {
+  position: relative;
+  z-index: 900;
+}
+
 .custom-location-dropdown {
   position: relative;
   z-index: 700;

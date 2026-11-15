@@ -1490,7 +1490,11 @@ if (showReviewScreen) {
   </div>
 
   {/* DEPARTMENT */}
-  <div className="selection-field">
+  <div
+    className={`selection-field department-selection-field ${
+      showDepartmentOptions ? "dropdown-open" : ""
+    }`}
+  >
     <label htmlFor="department-select">
       2. Department
     </label>
