@@ -73,6 +73,10 @@ const [missedReasons, setMissedReasons] = useState([]);
 
 const [otherMissedReason, setOtherMissedReason] = useState("");
 
+const [locationSearch, setLocationSearch] = useState("");
+const [departmentSearch, setDepartmentSearch] = useState("");
+const [personnelSearch, setPersonnelSearch] = useState("");
+
   useEffect(() => {
     if (showReviewScreen) {
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -294,10 +298,33 @@ useEffect(() => {
   // =====================================
 
   const selectedLocation = locations.find(
-    (location) => location.id === selectedLocationId
+  (location) => location.id === selectedLocationId
+);
+
+const departments = selectedLocation?.departments || [];
+
+// Search locations (matches any part of the name)
+const filteredLocations = locations.filter((location) =>
+  (location.name || "")
+    .toLowerCase()
+    .includes(locationSearch.trim().toLowerCase())
+);
+
+// Search departments while preserving their original indexes
+const filteredDepartments = departments
+  .map((department, index) => ({ department, index }))
+  .filter((item) =>
+    item.department
+      .toLowerCase()
+      .includes(departmentSearch.trim().toLowerCase())
   );
 
-  const departments = selectedLocation?.departments || [];
+// Search personnel (matches any part of the name)
+const filteredPersonnel = personnel.filter((person) =>
+  (person.name || "")
+    .toLowerCase()
+    .includes(personnelSearch.trim().toLowerCase())
+);
 
   // =====================================
   // HANDLE LOCATION CHANGE
@@ -797,12 +824,6 @@ const handleRemoveDepartmentField = (index) => {
     prev.filter((_, i) => i !== index)
   );
 };
-
-// =====================================
-// ALL PERSONNEL
-// =====================================
-
-const filteredPersonnel = personnel;
 
 // =====================================
 // ADD / REMOVE STAFF INPUT FIELDS
@@ -1410,12 +1431,24 @@ if (showReviewScreen) {
     {/* LOCATION OPTIONS */}
 {showLocationOptions && (
   <div className="custom-location-options">
-    {locations.length === 0 ? (
+
+    {/* SEARCH INPUT */}
+    <div className="custom-dropdown-search">
+      <input
+        type="text"
+        placeholder="Search location..."
+        value={locationSearch}
+        onChange={(e) => setLocationSearch(e.target.value)}
+        autoComplete="off"
+      />
+    </div>
+
+    {filteredLocations.length === 0 ? (
       <div className="custom-location-empty">
-        No locations available.
+        No matching locations found.
       </div>
     ) : (
-      locations.map((location) => (
+      filteredLocations.map((location) => (
         <div
           key={location.id}
           data-location-id={location.id}
@@ -1438,6 +1471,7 @@ if (showReviewScreen) {
             }
 
             handleSelectLocation(location.id);
+            setLocationSearch("");
           }}
         >
           <span className="custom-location-name">
@@ -1484,6 +1518,8 @@ if (showReviewScreen) {
     )}
   </div>
 )}
+
+    
   </div>
 
   {/* ADD LOCATION BUTTON */}
@@ -1542,68 +1578,95 @@ if (showReviewScreen) {
       </button>
 
       {showDepartmentOptions && (
-        <div className="custom-location-options">
-          {departments.map((department, index) => (
+  <div className="custom-location-options">
+
+    {/* SEARCH INPUT */}
+    <div className="custom-dropdown-search">
+      <input
+        type="text"
+        placeholder="Search department..."
+        value={departmentSearch}
+        onChange={(e) => setDepartmentSearch(e.target.value)}
+        autoComplete="off"
+      />
+    </div>
+
+    {filteredDepartments.length === 0 ? (
+      <div className="custom-location-empty">
+        No matching departments found.
+      </div>
+    ) : (
+      filteredDepartments.map(({ department, index }) => (
+        <div
+          key={`${department}-${index}`}
+          className={`custom-location-option ${
+            selectedDepartment === department ? "selected" : ""
+          }`}
+          onPointerDown={(e) =>
+            handleSelectionPointerDown(e, setDepartmentMenuId, index)
+          }
+          onPointerUp={handleLocationPointerUp}
+          onPointerLeave={handleLocationPointerUp}
+          onPointerCancel={handleLocationPointerUp}
+          onContextMenu={(e) =>
+            handleSelectionContextMenu(e, setDepartmentMenuId, index)
+          }
+          onClick={() => {
+            if (longPressTriggered.current) {
+              longPressTriggered.current = false;
+              return;
+            }
+
+            setSelectedDepartment(department);
+            setShowDepartmentOptions(false);
+            setDepartmentMenuId(null);
+            setDepartmentSearch("");
+          }}
+        >
+          <span className="custom-location-name">
+            {department}
+          </span>
+
+          {selectedDepartment === department && (
+            <span className="location-selected-check">✓</span>
+          )}
+
+          {userRole === "admin" && departmentMenuId === index && (
             <div
-              key={`${department}-${index}`}
-              className={`custom-location-option ${
-                selectedDepartment === department ? "selected" : ""
-              }`}
-              onPointerDown={(e) =>
-                handleSelectionPointerDown(e, setDepartmentMenuId, index)
-              }
-              onPointerUp={handleLocationPointerUp}
-              onPointerLeave={handleLocationPointerUp}
-              onPointerCancel={handleLocationPointerUp}
-              onContextMenu={(e) =>
-                handleSelectionContextMenu(e, setDepartmentMenuId, index)
-              }
-              onClick={() => {
-                if (longPressTriggered.current) {
-                  longPressTriggered.current = false;
-                  return;
-                }
-                setSelectedDepartment(department);
-                setShowDepartmentOptions(false);
-                setDepartmentMenuId(null);
+              className="location-context-menu"
+              style={{
+                top: `${locationMenuPosition.top}px`,
+                left: `${locationMenuPosition.left}px`,
               }}
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
             >
-              <span className="custom-location-name">{department}</span>
-              {selectedDepartment === department && (
-                <span className="location-selected-check">✓</span>
-              )}
-              {userRole === "admin" && departmentMenuId === index && (
-                <div
-                  className="location-context-menu"
-                  style={{
-                    top: `${locationMenuPosition.top}px`,
-                    left: `${locationMenuPosition.left}px`,
-                  }}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <button
-                    type="button"
-                    onClick={() => handleEditSelection("department", department, index)}
-                  >
-                    <span>✎</span>
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    className="location-delete-action"
-                    onClick={() => handleRemoveDepartment(department, index)}
-                    disabled={selectionDeleting}
-                  >
-                    <span>⌫</span>
-                    {selectionDeleting ? "Removing..." : "Remove"}
-                  </button>
-                </div>
-              )}
+              <button
+                type="button"
+                onClick={() =>
+                  handleEditSelection("department", department, index)
+                }
+              >
+                <span>✎</span>
+                Edit
+              </button>
+
+              <button
+                type="button"
+                className="location-delete-action"
+                onClick={() => handleRemoveDepartment(department, index)}
+                disabled={selectionDeleting}
+              >
+                <span>⌫</span>
+                {selectionDeleting ? "Removing..." : "Remove"}
+              </button>
             </div>
-          ))}
+          )}
         </div>
-      )}
+      ))
+    )}
+  </div>
+)}
       </div>
     </div>
   </div>
@@ -1641,72 +1704,93 @@ if (showReviewScreen) {
       </button>
 
       {showPersonnelOptions && (
-        <div className="custom-location-options">
-          {filteredPersonnel.length === 0 ? (
-            <div className="custom-location-empty">No personnel available.</div>
-          ) : (
-            filteredPersonnel.map((person) => (
-              <div
-                key={person.id}
-                className={`custom-location-option ${
-                  selectedPersonnel === person.id ? "selected" : ""
-                }`}
-                onPointerDown={(e) =>
-                  handleSelectionPointerDown(e, setPersonnelMenuId, person.id)
-                }
-                onPointerUp={handleLocationPointerUp}
-                onPointerLeave={handleLocationPointerUp}
-                onPointerCancel={handleLocationPointerUp}
-                onContextMenu={(e) =>
-                  handleSelectionContextMenu(e, setPersonnelMenuId, person.id)
-                }
-                onClick={() => {
-                  if (longPressTriggered.current) {
-                    longPressTriggered.current = false;
-                    return;
-                  }
-                  setSelectedPersonnel(person.id);
-                  setShowPersonnelOptions(false);
-                  setPersonnelMenuId(null);
-                }}
+  <div className="custom-location-options">
+
+    {/* SEARCH INPUT */}
+    <div className="custom-dropdown-search">
+      <input
+        type="text"
+        placeholder="Search personnel..."
+        value={personnelSearch}
+        onChange={(e) => setPersonnelSearch(e.target.value)}
+        autoComplete="off"
+      />
+    </div>
+
+    {filteredPersonnel.length === 0 ? (
+      <div className="custom-location-empty">
+        No matching personnel found.
+      </div>
+    ) : (
+      filteredPersonnel.map((person) => (
+        <div
+          key={person.id}
+          className={`custom-location-option ${
+            selectedPersonnel === person.id ? "selected" : ""
+          }`}
+          onPointerDown={(e) =>
+            handleSelectionPointerDown(e, setPersonnelMenuId, person.id)
+          }
+          onPointerUp={handleLocationPointerUp}
+          onPointerLeave={handleLocationPointerUp}
+          onPointerCancel={handleLocationPointerUp}
+          onContextMenu={(e) =>
+            handleSelectionContextMenu(e, setPersonnelMenuId, person.id)
+          }
+          onClick={() => {
+            if (longPressTriggered.current) {
+              longPressTriggered.current = false;
+              return;
+            }
+
+            setSelectedPersonnel(person.id);
+            setShowPersonnelOptions(false);
+            setPersonnelMenuId(null);
+            setPersonnelSearch("");
+          }}
+        >
+          <span className="custom-location-name">
+            {person.name}
+          </span>
+
+          {selectedPersonnel === person.id && (
+            <span className="location-selected-check">✓</span>
+          )}
+
+          {userRole === "admin" && personnelMenuId === person.id && (
+            <div
+              className="location-context-menu"
+              style={{
+                top: `${locationMenuPosition.top}px`,
+                left: `${locationMenuPosition.left}px`,
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => handleEditSelection("personnel", person)}
               >
-                <span className="custom-location-name">{person.name}</span>
-                {selectedPersonnel === person.id && (
-                  <span className="location-selected-check">✓</span>
-                )}
-                {userRole === "admin" && personnelMenuId === person.id && (
-                  <div
-                    className="location-context-menu"
-                    style={{
-                      top: `${locationMenuPosition.top}px`,
-                      left: `${locationMenuPosition.left}px`,
-                    }}
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => handleEditSelection("personnel", person)}
-                    >
-                      <span>✎</span>
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      className="location-delete-action"
-                      onClick={() => handleRemovePersonnel(person)}
-                      disabled={selectionDeleting}
-                    >
-                      <span>⌫</span>
-                      {selectionDeleting ? "Removing..." : "Remove"}
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))
+                <span>✎</span>
+                Edit
+              </button>
+
+              <button
+                type="button"
+                className="location-delete-action"
+                onClick={() => handleRemovePersonnel(person)}
+                disabled={selectionDeleting}
+              >
+                <span>⌫</span>
+                {selectionDeleting ? "Removing..." : "Remove"}
+              </button>
+            </div>
           )}
         </div>
-      )}
+      ))
+    )}
+  </div>
+)}
     </div>
 
     <button
