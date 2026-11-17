@@ -26,6 +26,7 @@ export default function Dashboard() {
 
   const [selectedUnit, setSelectedUnit] = useState("All");
   const [selectedDepartment, setSelectedDepartment] = useState("All");
+  const [selectedPersonnel, setSelectedPersonnel] = useState("All");
 
   // Date filters
   const [dateFilterType, setDateFilterType] = useState("date");
@@ -91,6 +92,17 @@ const [showMobileFilters, setShowMobileFilters] = useState(false);
     ].sort();
   }, [records]);
 
+  // Get unique personnel names
+  const personnelNames = useMemo(() => {
+    return [
+      ...new Set(
+        records
+          .map((record) => record.personnelName?.trim())
+          .filter(Boolean)
+      ),
+    ].sort((a, b) => a.localeCompare(b));
+  }, [records]);
+
   // Get departments based on selected unit
   const departments = useMemo(() => {
     const filteredRecords =
@@ -120,6 +132,10 @@ const [showMobileFilters, setShowMobileFilters] = useState(false);
         selectedDepartment === "All" ||
         record.department === selectedDepartment;
 
+      const matchesPersonnel =
+        selectedPersonnel === "All" ||
+        record.personnelName?.trim() === selectedPersonnel;
+
       const recordDate = getLocalDate(record.createdAt);
       const recordMonth = recordDate
         ? recordDate.slice(0, 7)
@@ -136,6 +152,7 @@ const [showMobileFilters, setShowMobileFilters] = useState(false);
       return (
         matchesUnit &&
         matchesDepartment &&
+        matchesPersonnel &&
         matchesDate
       );
     });
@@ -143,6 +160,7 @@ const [showMobileFilters, setShowMobileFilters] = useState(false);
   records,
   selectedUnit,
   selectedDepartment,
+  selectedPersonnel,
   dateFilterType,
   selectedDate,
   selectedMonth,
@@ -246,6 +264,60 @@ const [showMobileFilters, setShowMobileFilters] = useState(false);
       );
   }, [filteredRecords]);
 
+  // Get the most commonly complied hygiene moments per department
+  const departmentCompliedMoments = useMemo(() => {
+    const departmentCounts = {};
+
+    filteredRecords
+      .filter(
+        (record) => record.complianceDetermination === "Complied"
+      )
+      .forEach((record) => {
+        const department =
+          record.department || "Unspecified Department";
+
+        if (!departmentCounts[department]) {
+          departmentCounts[department] = {};
+        }
+
+        (Array.isArray(record.moments) ? record.moments : []).forEach(
+          (item) => {
+            const moment =
+              typeof item === "string" ? item : item?.label;
+            const label = typeof moment === "string" ? moment.trim() : "";
+
+            if (label) {
+              departmentCounts[department][label] =
+                (departmentCounts[department][label] || 0) + 1;
+            }
+          }
+        );
+      });
+
+    return Object.entries(departmentCounts)
+      .map(([department, moments]) => {
+        const sortedMoments = Object.entries(moments)
+          .map(([moment, count]) => ({ moment, count }))
+          .sort((a, b) => b.count - a.count);
+
+        const totalCompliedMoments = sortedMoments.reduce(
+          (total, item) => total + item.count,
+          0
+        );
+
+        return {
+          department,
+          moments: sortedMoments.slice(0, 3),
+          totalCompliedMoments,
+        };
+      })
+      .filter((item) => item.moments.length > 0)
+      .sort(
+        (a, b) =>
+          b.totalCompliedMoments - a.totalCompliedMoments
+      );
+  }, [filteredRecords]);
+
   // Reset department if unavailable in selected unit
   useEffect(() => {
     if (
@@ -281,6 +353,11 @@ const handleExportPDF = () => {
     selectedDepartment === "All"
       ? "All Departments"
       : selectedDepartment;
+
+  const personnelLabel =
+    selectedPersonnel === "All"
+      ? "All Personnel"
+      : selectedPersonnel;
 
   let dateLabel = "All Dates";
 
@@ -338,6 +415,7 @@ const handleExportPDF = () => {
     body: [
       ["Unit", unitLabel],
       ["Department", departmentLabel],
+      ["Personnel", personnelLabel],
       ["Date", dateLabel],
     ],
     theme: "grid",
@@ -478,6 +556,70 @@ const handleExportPDF = () => {
   });
 
   // ======================================
+  // MOST COMMON COMPLIED MOMENTS
+  // ======================================
+  currentY = pdf.lastAutoTable.finalY + 12;
+
+  if (currentY > pageHeight - 45) {
+    pdf.addPage();
+    currentY = 20;
+  }
+
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(12);
+  pdf.setTextColor(40, 40, 40);
+
+  pdf.text("MOST COMMON COMPLIED MOMENTS", 14, currentY);
+
+  const compliedMomentRows = [];
+
+  departmentCompliedMoments.forEach((item) => {
+    item.moments.forEach((moment, index) => {
+      compliedMomentRows.push([
+        item.department,
+        index + 1,
+        moment.moment,
+        `${moment.count} ${moment.count === 1 ? "time" : "times"}`,
+      ]);
+    });
+  });
+
+  if (compliedMomentRows.length === 0) {
+    compliedMomentRows.push([
+      "-",
+      "-",
+      "No complied moments recorded for the selected filters.",
+      "-",
+    ]);
+  }
+
+  autoTable(pdf, {
+    startY: currentY + 5,
+    head: [["Department", "Rank", "Complied Moment", "Frequency"]],
+    body: compliedMomentRows,
+    theme: "grid",
+    styles: {
+      font: "helvetica",
+      fontSize: 9,
+      cellPadding: 4,
+      textColor: [50, 50, 50],
+      overflow: "linebreak",
+    },
+    headStyles: {
+      fillColor: [22, 163, 74],
+      textColor: [255, 255, 255],
+      fontStyle: "bold",
+    },
+    columnStyles: {
+      0: { cellWidth: 45 },
+      1: { cellWidth: 15, halign: "center" },
+      2: { cellWidth: "auto" },
+      3: { cellWidth: 28, halign: "center" },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  // ======================================
   // REPORT FOOTER / PAGE NUMBERS
   // ======================================
   const totalPages = pdf.internal.getNumberOfPages();
@@ -594,6 +736,22 @@ const handleExportPDF = () => {
             {departments.map((department) => (
               <option key={department} value={department}>
                 {department}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="dashboard-filter-group">
+          <label htmlFor="personnelFilter">Personnel</label>
+          <select
+            id="personnelFilter"
+            value={selectedPersonnel}
+            onChange={(e) => setSelectedPersonnel(e.target.value)}
+          >
+            <option value="All">All Personnel</option>
+            {personnelNames.map((name) => (
+              <option key={name} value={name}>
+                {name}
               </option>
             ))}
           </select>
@@ -754,6 +912,56 @@ const handleExportPDF = () => {
                           <span className="dashboard-hindrance-count">
                             {reason.count}{" "}
                             {reason.count === 1 ? "time" : "times"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* MOST COMMON COMPLIED MOMENTS */}
+          <div className="dashboard-hindrances dashboard-complied-moments">
+            <div className="dashboard-hindrances-header">
+              <div>
+                <h2>Most Common Complied Moments</h2>
+                <p>Top complied hand hygiene moments per department</p>
+              </div>
+            </div>
+
+            {departmentCompliedMoments.length === 0 ? (
+              <div className="dashboard-no-hindrances">
+                No complied moments recorded for the selected filters.
+              </div>
+            ) : (
+              <div className="dashboard-department-list">
+                {departmentCompliedMoments.map((item) => (
+                  <div
+                    className="dashboard-department-card"
+                    key={item.department}
+                  >
+                    <h3>{item.department}</h3>
+
+                    <div className="dashboard-hindrance-list">
+                      {item.moments.map((moment, index) => (
+                        <div
+                          className="dashboard-hindrance-item"
+                          key={moment.moment}
+                        >
+                          <div className="dashboard-hindrance-info">
+                            <span className="dashboard-hindrance-rank">
+                              {index + 1}
+                            </span>
+                            <span className="dashboard-hindrance-name">
+                              {moment.moment}
+                            </span>
+                          </div>
+
+                          <span className="dashboard-hindrance-count">
+                            {moment.count}{" "}
+                            {moment.count === 1 ? "time" : "times"}
                           </span>
                         </div>
                       ))}

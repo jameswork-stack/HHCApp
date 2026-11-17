@@ -299,6 +299,15 @@
   font-weight: 600;
 }
 
+.dashboard-complied-moments .dashboard-hindrance-rank {
+  background: rgba(22, 163, 74, 0.1);
+  color: #16a34a;
+}
+
+.dashboard-complied-moments .dashboard-hindrance-count {
+  color: #16a34a;
+}
+
 .dashboard-no-hindrances {
   padding: 25px 10px;
   text-align: center;
