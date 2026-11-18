@@ -30,9 +30,11 @@ export default function Dashboard() {
 
   // Date filters
   const [dateFilterType, setDateFilterType] = useState("date");
-const [selectedDate, setSelectedDate] = useState(getTodayLocalDate);
-const [selectedMonth, setSelectedMonth] = useState("");
-const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(getTodayLocalDate);
+  const [selectedMonth, setSelectedMonth] = useState("");
+  const [selectedDateFrom, setSelectedDateFrom] = useState("");
+  const [selectedDateTo, setSelectedDateTo] = useState("");
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   // Get compliance records from Firebase
   useEffect(() => {
@@ -143,11 +145,16 @@ const [showMobileFilters, setShowMobileFilters] = useState(false);
 
       // Exact date takes priority over month
       const matchesDate =
-  dateFilterType === "date"
-    ? recordDate === selectedDate || !selectedDate
-    : dateFilterType === "month"
-    ? recordMonth === selectedMonth || !selectedMonth
-    : true;
+        dateFilterType === "date"
+          ? recordDate === selectedDate || !selectedDate
+          : dateFilterType === "month"
+            ? recordMonth === selectedMonth || !selectedMonth
+            : dateFilterType === "range"
+              ? (!selectedDateFrom && !selectedDateTo) ||
+                (!!recordDate &&
+                  (!selectedDateFrom || recordDate >= selectedDateFrom) &&
+                  (!selectedDateTo || recordDate <= selectedDateTo))
+              : true;
 
       return (
         matchesUnit &&
@@ -164,6 +171,8 @@ const [showMobileFilters, setShowMobileFilters] = useState(false);
   dateFilterType,
   selectedDate,
   selectedMonth,
+  selectedDateFrom,
+  selectedDateTo,
 ]);
 
   // Count compliance results
@@ -372,6 +381,15 @@ const handleExportPDF = () => {
           { month: "long", year: "numeric" }
         )
       : "All Dates";
+  } else if (dateFilterType === "range") {
+    const fromLabel = selectedDateFrom
+      ? new Date(`${selectedDateFrom}T00:00:00`).toLocaleDateString()
+      : "Beginning";
+    const toLabel = selectedDateTo
+      ? new Date(`${selectedDateTo}T00:00:00`).toLocaleDateString()
+      : "Present";
+
+    dateLabel = `${fromLabel} - ${toLabel}`;
   }
 
   // ======================================
@@ -769,11 +787,14 @@ const handleExportPDF = () => {
       setDateFilterType(e.target.value);
       setSelectedDate("");
       setSelectedMonth("");
+      setSelectedDateFrom("");
+      setSelectedDateTo("");
     }}
   >
     <option value="">All Dates</option>
     <option value="date">Exact Date</option>
     <option value="month">Exact Month</option>
+    <option value="range">Date Range</option>
   </select>
 </div>
 
@@ -805,6 +826,33 @@ const handleExportPDF = () => {
   </div>
 )}
 
+{/* SHOW DATE RANGE PICKERS */}
+{dateFilterType === "range" && (
+  <>
+    <div className="dashboard-filter-group">
+      <label htmlFor="dateFrom">Date From</label>
+      <input
+        type="date"
+        id="dateFrom"
+        value={selectedDateFrom}
+        max={selectedDateTo || undefined}
+        onChange={(e) => setSelectedDateFrom(e.target.value)}
+      />
+    </div>
+
+    <div className="dashboard-filter-group">
+      <label htmlFor="dateTo">Date To</label>
+      <input
+        type="date"
+        id="dateTo"
+        value={selectedDateTo}
+        min={selectedDateFrom || undefined}
+        onChange={(e) => setSelectedDateTo(e.target.value)}
+      />
+    </div>
+  </>
+)}
+
 {/* CLEAR DATE FILTER */}
 {dateFilterType !== "" && (
   <div className="dashboard-filter-group dashboard-clear-filter">
@@ -816,6 +864,8 @@ const handleExportPDF = () => {
         setDateFilterType("");
         setSelectedDate("");
         setSelectedMonth("");
+        setSelectedDateFrom("");
+        setSelectedDateTo("");
       }}
     >
       Clear Date Filter
